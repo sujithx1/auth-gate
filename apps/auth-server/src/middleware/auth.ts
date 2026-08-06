@@ -32,3 +32,21 @@ export const createAuthMiddleware = (
     await next();
   };
 };
+
+export const createPermissionMiddleware = (rbacService: any) => {
+  return (permissionName: string) => {
+    return async (c: Context<Env>, next: () => Promise<void>) => {
+      const user = c.get("user");
+      if (!user) {
+        throw new AuthGateError("UNAUTHORIZED", "User context not found", 401);
+      }
+
+      const hasAccess = await rbacService.hasPermission(user.id, permissionName);
+      if (!hasAccess) {
+        throw new AuthGateError("FORBIDDEN", `Missing required permission: ${permissionName}`, 403);
+      }
+
+      await next();
+    };
+  };
+};
