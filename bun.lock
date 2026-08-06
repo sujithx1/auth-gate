@@ -80,6 +80,22 @@
         "@authgate/shared": "workspace:*",
       },
     },
+    "packages/organization": {
+      "name": "@authgate/organization",
+      "version": "0.1.0",
+      "dependencies": {
+        "@authgate/core": "workspace:*",
+        "@authgate/shared": "workspace:*",
+      },
+    },
+    "packages/rbac": {
+      "name": "@authgate/rbac",
+      "version": "0.1.0",
+      "dependencies": {
+        "@authgate/core": "workspace:*",
+        "@authgate/shared": "workspace:*",
+      },
+    },
     "packages/session": {
       "name": "@authgate/session",
       "version": "0.1.0",
@@ -102,6 +118,10 @@
     "@authgate/core": ["@authgate/core@workspace:packages/core"],
 
     "@authgate/drizzle": ["@authgate/drizzle@workspace:packages/adapters/drizzle"],
+
+    "@authgate/organization": ["@authgate/organization@workspace:packages/organization"],
+
+    "@authgate/rbac": ["@authgate/rbac@workspace:packages/rbac"],
 
     "@authgate/session": ["@authgate/session@workspace:packages/session"],
 
