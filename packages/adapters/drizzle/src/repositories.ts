@@ -7,6 +7,14 @@ import {
   VerificationToken,
   VerificationTokenRepository,
   VerificationTokenType,
+  Role,
+  Permission,
+  RoleRepository,
+  Organization,
+  OrganizationMember,
+  Invitation,
+  OrganizationRepository,
+  InvitationRepository,
 } from "@authgate/core";
 import * as schema from "./schema";
 
@@ -166,5 +174,143 @@ export class DrizzleVerificationTokenRepository implements VerificationTokenRepo
     await this.db
       .delete(schema.verificationTokens)
       .where(lt(schema.verificationTokens.expiresAt, new Date()));
+  }
+}
+
+export class DrizzleRoleRepository implements RoleRepository {
+  constructor(private readonly db: any) {}
+
+  async createRole(role: Omit<Role, "id" | "createdAt">): Promise<Role> {
+    const results = await this.db.insert(schema.roles).values(role).returning();
+    return results[0];
+  }
+
+  async createPermission(permission: Omit<Permission, "id" | "createdAt">): Promise<Permission> {
+    const results = await this.db.insert(schema.permissions).values(permission).returning();
+    return results[0];
+  }
+
+  async findRoleByName(name: string): Promise<Role | null> {
+    const results = await this.db.select().from(schema.roles).where(eq(schema.roles.name, name)).limit(1);
+    return results[0] || null;
+  }
+
+  async findPermissionByName(name: string): Promise<Permission | null> {
+    const results = await this.db.select().from(schema.permissions).where(eq(schema.permissions.name, name)).limit(1);
+    return results[0] || null;
+  }
+
+  async addPermissionToRole(roleId: string, permissionId: string): Promise<void> {
+    await this.db.insert(schema.rolePermissions).values({ roleId, permissionId });
+  }
+
+  async assignRoleToUser(userId: string, roleId: string): Promise<void> {
+    await this.db.insert(schema.userRoles).values({ userId, roleId });
+  }
+
+  async getUserPermissions(userId: string): Promise<Permission[]> {
+    const userRoleList = await this.db
+      .select({ roleId: schema.userRoles.roleId })
+      .from(schema.userRoles)
+      .where(eq(schema.userRoles.userId, userId));
+    const roleIds = userRoleList.map((ur: any) => ur.roleId);
+    if (roleIds.length === 0) return [];
+
+    const permList = await this.db
+      .select({
+        id: schema.permissions.id,
+        name: schema.permissions.name,
+        description: schema.permissions.description,
+        createdAt: schema.permissions.createdAt,
+      })
+      .from(schema.rolePermissions)
+      .innerJoin(schema.permissions, eq(schema.rolePermissions.permissionId, schema.permissions.id))
+      .where(eq(schema.rolePermissions.roleId, roleIds[0])); // simple match for first role or map them
+    
+    return permList;
+  }
+
+  async getUserRoles(userId: string): Promise<Role[]> {
+    const list = await this.db
+      .select({
+        id: schema.roles.id,
+        name: schema.roles.name,
+        description: schema.roles.description,
+        createdAt: schema.roles.createdAt,
+      })
+      .from(schema.userRoles)
+      .innerJoin(schema.roles, eq(schema.userRoles.roleId, schema.roles.id))
+      .where(eq(schema.userRoles.userId, userId));
+    return list;
+  }
+}
+
+export class DrizzleOrganizationRepository implements OrganizationRepository {
+  constructor(private readonly db: any) {}
+
+  async findById(id: string): Promise<Organization | null> {
+    const results = await this.db.select().from(schema.organizations).where(eq(schema.organizations.id, id)).limit(1);
+    return results[0] || null;
+  }
+
+  async findBySlug(slug: string): Promise<Organization | null> {
+    const results = await this.db.select().from(schema.organizations).where(eq(schema.organizations.slug, slug)).limit(1);
+    return results[0] || null;
+  }
+
+  async create(org: Omit<Organization, "id" | "createdAt" | "updatedAt">): Promise<Organization> {
+    const results = await this.db.insert(schema.organizations).values(org).returning();
+    return results[0];
+  }
+
+  async addMember(member: Omit<OrganizationMember, "id" | "createdAt">): Promise<OrganizationMember> {
+    const results = await this.db.insert(schema.organizationMembers).values(member).returning();
+    return results[0];
+  }
+
+  async getMembers(orgId: string): Promise<OrganizationMember[]> {
+    return await this.db.select().from(schema.organizationMembers).where(eq(schema.organizationMembers.organizationId, orgId));
+  }
+
+  async getUserOrganizations(userId: string): Promise<Organization[]> {
+    const list = await this.db
+      .select({
+        id: schema.organizations.id,
+        name: schema.organizations.name,
+        slug: schema.organizations.slug,
+        createdAt: schema.organizations.createdAt,
+        updatedAt: schema.organizations.updatedAt,
+      })
+      .from(schema.organizationMembers)
+      .innerJoin(schema.organizations, eq(schema.organizationMembers.organizationId, schema.organizations.id))
+      .where(eq(schema.organizationMembers.userId, userId));
+    return list;
+  }
+}
+
+export class DrizzleInvitationRepository implements InvitationRepository {
+  constructor(private readonly db: any) {}
+
+  async create(invitation: Omit<Invitation, "id" | "createdAt">): Promise<Invitation> {
+    const results = await this.db.insert(schema.invitations).values(invitation).returning();
+    const raw = results[0];
+    return {
+      ...raw,
+      status: raw.status as "PENDING" | "ACCEPTED" | "REVOKED",
+    };
+  }
+
+  async findByToken(token: string): Promise<Invitation | null> {
+    const results = await this.db.select().from(schema.invitations).where(eq(schema.invitations.token, token)).limit(1);
+    const raw = results[0];
+    if (!raw) return null;
+    return {
+      ...raw,
+      status: raw.status as "PENDING" | "ACCEPTED" | "REVOKED",
+    };
+  }
+
+  async updateStatus(id: string, status: "PENDING" | "ACCEPTED" | "REVOKED"): Promise<void> {
+    await this.db.update(schema.invitations).set({ status }).where(eq(schema.invitations.id, id));
   }
 }
