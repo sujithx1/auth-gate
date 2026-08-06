@@ -32,7 +32,13 @@ const sessionService = new SessionService(authGate.database.sessions);
 // 2. Initialize Hono App
 const app = new Hono<Env>();
 
-app.use("*", cors());
+app.use("*", cors({
+  origin: (origin) => {
+    const allowed = env.ALLOWED_ORIGINS.split(",");
+    return allowed.includes(origin) ? origin : allowed[0];
+  },
+  credentials: true,
+}));
 app.use("*", logger());
 // Global Error Handler conforming to API Rules
 app.onError((err, c) => {
