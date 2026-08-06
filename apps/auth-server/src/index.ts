@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { logger } from "hono/logger";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { z } from "zod";
@@ -27,14 +28,8 @@ const sessionService = new SessionService(authGate.database.sessions);
 // 2. Initialize Hono App
 const app = new Hono<Env>();
 
-// Configure CORS using T3 Env origins
-// app.use("*", cors({
-//   origin: env.ALLOWED_ORIGINS.split(","),
-//   credentials: true,
-// }));
-
-
-app.use("*",cors())
+app.use("*", cors());
+app.use("*", logger());
 // Global Error Handler conforming to API Rules
 app.onError((err, c) => {
   console.error("Request Error:", err);
