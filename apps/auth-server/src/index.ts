@@ -13,8 +13,12 @@ import { AuthGateError } from "@authgate/shared";
 
 import { env } from "./env";
 import { Env } from "./types";
-import { createAuthMiddleware } from "./middleware/auth";
+import { createAuthMiddleware, createPermissionMiddleware } from "./middleware/auth";
 import { createAuthRouter } from "./routes/auth";
+import { createOrganizationRouter } from "./routes/organization";
+import { createRbacRouter } from "./routes/rbac";
+import { RbacService } from "@authgate/rbac";
+import { OrganizationService } from "@authgate/organization";
 
 // 1. Initialize DB Connection & Adapter
 const queryClient = postgres(env.DATABASE_URL);
@@ -65,10 +69,19 @@ app.onError((err, c) => {
 });
 
 // 3. Setup Routes and Middleware
+const rbacService = new RbacService(authGate.database.roles);
+const orgService = new OrganizationService(authGate.database.organizations, authGate.database.invitations);
+
 const authMiddleware = createAuthMiddleware(authGate.database.users, sessionService);
+const permissionMiddleware = createPermissionMiddleware(rbacService);
+
 const authRouter = createAuthRouter(authService, sessionService, authMiddleware);
+const orgRouter = createOrganizationRouter(orgService, authMiddleware);
+const rbacRouter = createRbacRouter(rbacService, authMiddleware, permissionMiddleware);
 
 app.route("/api/auth", authRouter);
+app.route("/api/orgs", orgRouter);
+app.route("/api/rbac", rbacRouter);
 
 export default {
   port: env.PORT,
