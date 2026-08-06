@@ -33,10 +33,9 @@ const sessionService = new SessionService(authGate.database.sessions);
 const app = new Hono<Env>();
 
 app.use("*", cors({
-  origin: (origin) => {
-    const allowed = env.ALLOWED_ORIGINS.split(",");
-    return allowed.includes(origin) ? origin : allowed[0];
-  },
+  origin: ["http://localhost:5173", "http://localhost:5174"],
+  allowHeaders: ["Authorization", "Content-Type", "Cookie"],
+  exposeHeaders: ["Content-Length"],
   credentials: true,
 }));
 app.use("*", logger());
