@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "main": "src/index.ts",
   "private": true,
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts"
+  },
   "dependencies": {
     "@authgate/core": "workspace:*",
     "@authgate/shared": "workspace:*",

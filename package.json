@@ -7,6 +7,9 @@
     "apps/*"
   ],
   "scripts": {
+    "dev:server": "bun --cwd apps/auth-server dev",
+    "dev:dashboard": "bun --cwd apps/admin-dashboard dev",
+    "dev": "bun run dev:server & bun run dev:dashboard",
     "test": "bun test"
   },
   "devDependencies": {
