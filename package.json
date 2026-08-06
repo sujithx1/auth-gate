@@ -7,7 +7,7 @@
     "apps/*"
   ],
   "scripts": {
-    "dev:server": "bun --cwd apps/auth-server dev",
+    "dev:server": "bun --watch apps/auth-server/src/index.ts",
     "dev:dashboard": "bun --cwd apps/admin-dashboard dev",
     "dev": "bun run dev:server & bun run dev:dashboard",
     "test": "bun test"
