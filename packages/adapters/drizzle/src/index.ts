@@ -6,6 +6,7 @@ import {
   DrizzleRoleRepository,
   DrizzleOrganizationRepository,
   DrizzleInvitationRepository,
+  DrizzleOAuthRepository,
 } from "./repositories";
 import * as schema from "./schema";
 
@@ -20,5 +21,6 @@ export function drizzleAdapter(db: any): DatabaseAdapter {
     roles: new DrizzleRoleRepository(db),
     organizations: new DrizzleOrganizationRepository(db),
     invitations: new DrizzleInvitationRepository(db),
+    oauth: new DrizzleOAuthRepository(db),
   };
 }

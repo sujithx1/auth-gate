@@ -4,6 +4,7 @@ import {
   varchar,
   boolean,
   timestamp,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -102,5 +103,47 @@ export const invitations = pgTable("invitations", {
   token: varchar("token", { length: 255 }).notNull().unique(),
   expiresAt: timestamp("expires_at").notNull(),
   status: varchar("status", { length: 50 }).default("PENDING").notNull(), // PENDING, ACCEPTED, REVOKED
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const oauthClients = pgTable("oauth_clients", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  clientId: varchar("client_id", { length: 255 }).notNull().unique(),
+  clientSecret: varchar("client_secret", { length: 255 }).notNull(),
+  redirectUris: jsonb("redirect_uris").$type<string[]>().notNull(),
+  allowedGrantTypes: jsonb("allowed_grant_types").$type<string[]>().notNull(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const oauthAuthorizationCodes = pgTable("oauth_authorization_codes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  code: varchar("code", { length: 255 }).notNull().unique(),
+  clientId: varchar("client_id", { length: 255 }).notNull(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  redirectUri: varchar("redirect_uri", { length: 512 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  codeChallenge: varchar("code_challenge", { length: 255 }).notNull(),
+  codeChallengeMethod: varchar("code_challenge_method", { length: 50 }).notNull(), // plain or S256
+  scope: varchar("scope", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const oauthTokens = pgTable("oauth_tokens", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  accessToken: varchar("access_token", { length: 255 }).notNull().unique(),
+  refreshToken: varchar("refresh_token", { length: 255 }).unique(),
+  clientId: varchar("client_id", { length: 255 }).notNull(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  refreshExpiresAt: timestamp("refresh_expires_at"),
+  scope: varchar("scope", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

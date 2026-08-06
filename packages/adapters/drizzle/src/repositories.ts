@@ -15,6 +15,10 @@ import {
   Invitation,
   OrganizationRepository,
   InvitationRepository,
+  OAuthClient,
+  OAuthAuthorizationCode,
+  OAuthToken,
+  OAuthRepository,
 } from "@authgate/core";
 import * as schema from "./schema";
 
@@ -312,5 +316,65 @@ export class DrizzleInvitationRepository implements InvitationRepository {
 
   async updateStatus(id: string, status: "PENDING" | "ACCEPTED" | "REVOKED"): Promise<void> {
     await this.db.update(schema.invitations).set({ status }).where(eq(schema.invitations.id, id));
+  }
+}
+
+export class DrizzleOAuthRepository implements OAuthRepository {
+  constructor(private readonly db: any) {}
+
+  async createClient(client: Omit<OAuthClient, "id" | "createdAt">): Promise<OAuthClient> {
+    const results = await this.db.insert(schema.oauthClients).values(client).returning();
+    return results[0];
+  }
+
+  async findClientById(clientId: string): Promise<OAuthClient | null> {
+    const results = await this.db.select().from(schema.oauthClients).where(eq(schema.oauthClients.clientId, clientId)).limit(1);
+    return results[0] || null;
+  }
+
+  async getUserClients(userId: string): Promise<OAuthClient[]> {
+    return await this.db.select().from(schema.oauthClients).where(eq(schema.oauthClients.userId, userId));
+  }
+
+  async createAuthorizationCode(code: Omit<OAuthAuthorizationCode, "id" | "createdAt">): Promise<OAuthAuthorizationCode> {
+    const results = await this.db.insert(schema.oauthAuthorizationCodes).values(code).returning();
+    const raw = results[0];
+    return {
+      ...raw,
+      codeChallengeMethod: raw.codeChallengeMethod as "plain" | "S256",
+    };
+  }
+
+  async findAuthorizationCode(code: string): Promise<OAuthAuthorizationCode | null> {
+    const results = await this.db.select().from(schema.oauthAuthorizationCodes).where(eq(schema.oauthAuthorizationCodes.code, code)).limit(1);
+    const raw = results[0];
+    if (!raw) return null;
+    return {
+      ...raw,
+      codeChallengeMethod: raw.codeChallengeMethod as "plain" | "S256",
+    };
+  }
+
+  async deleteAuthorizationCode(code: string): Promise<void> {
+    await this.db.delete(schema.oauthAuthorizationCodes).where(eq(schema.oauthAuthorizationCodes.code, code));
+  }
+
+  async createToken(token: Omit<OAuthToken, "id" | "createdAt">): Promise<OAuthToken> {
+    const results = await this.db.insert(schema.oauthTokens).values(token).returning();
+    return results[0];
+  }
+
+  async findTokenByAccessToken(accessToken: string): Promise<OAuthToken | null> {
+    const results = await this.db.select().from(schema.oauthTokens).where(eq(schema.oauthTokens.accessToken, accessToken)).limit(1);
+    return results[0] || null;
+  }
+
+  async findTokenByRefreshToken(refreshToken: string): Promise<OAuthToken | null> {
+    const results = await this.db.select().from(schema.oauthTokens).where(eq(schema.oauthTokens.refreshToken, refreshToken)).limit(1);
+    return results[0] || null;
+  }
+
+  async deleteToken(accessToken: string): Promise<void> {
+    await this.db.delete(schema.oauthTokens).where(eq(schema.oauthTokens.accessToken, accessToken));
   }
 }
