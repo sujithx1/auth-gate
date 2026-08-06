@@ -14,7 +14,7 @@
     "@authgate/session": "workspace:*",
     "@authgate/shared": "workspace:*",
     "@t3-oss/env-core": "^0.13.11",
-    "drizzle-orm": "^0.30.0",
+    "drizzle-orm": "^0.45.2",
     "hono": "^4.0.0",
     "postgres": "^3.4.3",
     "zod": "^3.22.4"
