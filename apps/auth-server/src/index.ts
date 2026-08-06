@@ -28,11 +28,13 @@ const sessionService = new SessionService(authGate.database.sessions);
 const app = new Hono<Env>();
 
 // Configure CORS using T3 Env origins
-app.use("*", cors({
-  origin: env.ALLOWED_ORIGINS.split(","),
-  credentials: true,
-}));
+// app.use("*", cors({
+//   origin: env.ALLOWED_ORIGINS.split(","),
+//   credentials: true,
+// }));
 
+
+app.use("*",cors())
 // Global Error Handler conforming to API Rules
 app.onError((err, c) => {
   console.error("Request Error:", err);
