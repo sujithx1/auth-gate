@@ -82,6 +82,14 @@
         "@authgate/shared": "workspace:*",
       },
     },
+    "packages/oauth": {
+      "name": "@authgate/oauth",
+      "version": "0.1.0",
+      "dependencies": {
+        "@authgate/core": "workspace:*",
+        "@authgate/shared": "workspace:*",
+      },
+    },
     "packages/organization": {
       "name": "@authgate/organization",
       "version": "0.1.0",
@@ -120,6 +128,8 @@
     "@authgate/core": ["@authgate/core@workspace:packages/core"],
 
     "@authgate/drizzle": ["@authgate/drizzle@workspace:packages/adapters/drizzle"],
+
+    "@authgate/oauth": ["@authgate/oauth@workspace:packages/oauth"],
 
     "@authgate/organization": ["@authgate/organization@workspace:packages/organization"],
 
