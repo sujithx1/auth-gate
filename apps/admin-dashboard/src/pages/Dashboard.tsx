@@ -1,4 +1,4 @@
-import { User as UserIcon, LogOut, Building2 } from "lucide-react";
+import { User as UserIcon, LogOut, Building2, Laptop } from "lucide-react";
 import { api } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../components/ui/card";
@@ -12,10 +12,11 @@ interface DashboardProps {
   };
   onLogout: () => void;
   onNavigateOrgs: () => void;
+  onNavigateClients: () => void;
   onError: (msg: string) => void;
 }
 
-export default function Dashboard({ user, onLogout, onNavigateOrgs, onError }: DashboardProps) {
+export default function Dashboard({ user, onLogout, onNavigateOrgs, onNavigateClients, onError }: DashboardProps) {
   const handleLogout = async () => {
     try {
       await api.post("/api/auth/logout");
@@ -80,6 +81,13 @@ export default function Dashboard({ user, onLogout, onNavigateOrgs, onError }: D
           >
             <Building2 className="w-4 h-4 mr-2" />
             Manage Organizations
+          </Button>
+          <Button
+            className="w-full bg-slate-900 hover:bg-slate-800 text-white border border-slate-800"
+            onClick={onNavigateClients}
+          >
+            <Laptop className="w-4 h-4 mr-2" />
+            Manage OAuth Clients
           </Button>
           <Button
             variant="outline"
