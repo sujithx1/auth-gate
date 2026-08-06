@@ -13,6 +13,7 @@
       "name": "admin-dashboard",
       "version": "0.0.0",
       "dependencies": {
+        "@t3-oss/env-core": "^0.13.11",
         "autoprefixer": "^10.5.4",
         "axios": "^1.19.0",
         "clsx": "^2.1.1",
@@ -43,6 +44,7 @@
         "@authgate/drizzle": "workspace:*",
         "@authgate/session": "workspace:*",
         "@authgate/shared": "workspace:*",
+        "@t3-oss/env-core": "^0.13.11",
         "drizzle-orm": "^0.30.0",
         "hono": "^4.0.0",
         "postgres": "^3.4.3",
@@ -237,6 +239,8 @@
     "@rolldown/binding-win32-x64-msvc": ["@rolldown/binding-win32-x64-msvc@1.2.3", "", { "os": "win32", "cpu": "x64" }, "sha512-ekcqMMkI2PlhYnfzQnB/cEdYUVVJViWvoUyLrbzgDoi3Snfc1mVBwdnc306ufA5ejy8JSPjT2RlW1nQSjW7efg=="],
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
+
+    "@t3-oss/env-core": ["@t3-oss/env-core@0.13.11", "", { "peerDependencies": { "arktype": "^2.1.0", "typescript": ">=5.0.0", "valibot": "^1.0.0-beta.7 || ^1.0.0", "zod": "^3.24.0 || ^4.0.0" }, "optionalPeers": ["arktype", "typescript", "valibot", "zod"] }, "sha512-sM7GYY+KL7H/Hl0BE0inWfk3nRHZOLhmVn7sHGxaZt9FAR6KqREXAE+6TqKfiavfXmpRxO/OZ2QgKRd+oiBYRQ=="],
 
     "@tailwindcss/node": ["@tailwindcss/node@4.3.3", "", { "dependencies": { "@jridgewell/remapping": "^2.3.5", "enhanced-resolve": "^5.24.1", "jiti": "^2.7.0", "lightningcss": "1.32.0", "magic-string": "^0.30.21", "source-map-js": "^1.2.1", "tailwindcss": "4.3.3" } }, "sha512-/T8IKEsf9VTU6tLjgC7+sv2mOPtQxzE2jMw7u4Tt40Tx+QSZxpzh95/H6cMKoja9XuW7iMdLJYBB0o9G1CaAgg=="],
 

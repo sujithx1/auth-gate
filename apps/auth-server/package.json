@@ -8,13 +8,14 @@
     "start": "bun src/index.ts"
   },
   "dependencies": {
-    "@authgate/core": "workspace:*",
-    "@authgate/shared": "workspace:*",
     "@authgate/auth": "workspace:*",
-    "@authgate/session": "workspace:*",
+    "@authgate/core": "workspace:*",
     "@authgate/drizzle": "workspace:*",
-    "hono": "^4.0.0",
+    "@authgate/session": "workspace:*",
+    "@authgate/shared": "workspace:*",
+    "@t3-oss/env-core": "^0.13.11",
     "drizzle-orm": "^0.30.0",
+    "hono": "^4.0.0",
     "postgres": "^3.4.3",
     "zod": "^3.22.4"
   }
