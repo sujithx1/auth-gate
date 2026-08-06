@@ -149,10 +149,153 @@ export class InMemoryVerificationTokenRepository implements VerificationTokenRep
   }
 }
 
+import {
+  Role,
+  Permission,
+  UserRole,
+  RolePermission,
+  RoleRepository,
+} from "../domain/rbac";
+import {
+  Organization,
+  OrganizationMember,
+  Invitation,
+  OrganizationRepository,
+  InvitationRepository,
+} from "../domain/organization";
+
+export class InMemoryRoleRepository implements RoleRepository {
+  public roles: Map<string, Role> = new Map();
+  public permissions: Map<string, Permission> = new Map();
+  public userRoles: UserRole[] = [];
+  public rolePermissions: RolePermission[] = [];
+
+  async createRole(role: Omit<Role, "id" | "createdAt">): Promise<Role> {
+    const id = crypto.randomUUID();
+    const created: Role = { ...role, id, createdAt: new Date() };
+    this.roles.set(id, created);
+    return created;
+  }
+
+  async createPermission(permission: Omit<Permission, "id" | "createdAt">): Promise<Permission> {
+    const id = crypto.randomUUID();
+    const created: Permission = { ...permission, id, createdAt: new Date() };
+    this.permissions.set(id, created);
+    return created;
+  }
+
+  async findRoleByName(name: string): Promise<Role | null> {
+    for (const r of this.roles.values()) {
+      if (r.name === name) return r;
+    }
+    return null;
+  }
+
+  async findPermissionByName(name: string): Promise<Permission | null> {
+    for (const p of this.permissions.values()) {
+      if (p.name === name) return p;
+    }
+    return null;
+  }
+
+  async addPermissionToRole(roleId: string, permissionId: string): Promise<void> {
+    const id = crypto.randomUUID();
+    this.rolePermissions.push({ id, roleId, permissionId });
+  }
+
+  async assignRoleToUser(userId: string, roleId: string): Promise<void> {
+    const id = crypto.randomUUID();
+    this.userRoles.push({ id, userId, roleId });
+  }
+
+  async getUserPermissions(userId: string): Promise<Permission[]> {
+    const roles = await this.getUserRoles(userId);
+    const roleIds = roles.map((r) => r.id);
+    const permIds = this.rolePermissions
+      .filter((rp) => roleIds.includes(rp.roleId))
+      .map((rp) => rp.permissionId);
+    
+    return Array.from(this.permissions.values()).filter((p) => permIds.includes(p.id));
+  }
+
+  async getUserRoles(userId: string): Promise<Role[]> {
+    const roleIds = this.userRoles.filter((ur) => ur.userId === userId).map((ur) => ur.roleId);
+    return Array.from(this.roles.values()).filter((r) => roleIds.includes(r.id));
+  }
+}
+
+export class InMemoryOrganizationRepository implements OrganizationRepository {
+  public orgs: Map<string, Organization> = new Map();
+  public members: OrganizationMember[] = [];
+
+  async findById(id: string): Promise<Organization | null> {
+    return this.orgs.get(id) || null;
+  }
+
+  async findBySlug(slug: string): Promise<Organization | null> {
+    for (const o of this.orgs.values()) {
+      if (o.slug === slug) return o;
+    }
+    return null;
+  }
+
+  async create(org: Omit<Organization, "id" | "createdAt" | "updatedAt">): Promise<Organization> {
+    const id = crypto.randomUUID();
+    const now = new Date();
+    const created: Organization = { ...org, id, createdAt: now, updatedAt: now };
+    this.orgs.set(id, created);
+    return created;
+  }
+
+  async addMember(member: Omit<OrganizationMember, "id" | "createdAt">): Promise<OrganizationMember> {
+    const id = crypto.randomUUID();
+    const created: OrganizationMember = { ...member, id, createdAt: new Date() };
+    this.members.push(created);
+    return created;
+  }
+
+  async getMembers(orgId: string): Promise<OrganizationMember[]> {
+    return this.members.filter((m) => m.organizationId === orgId);
+  }
+
+  async getUserOrganizations(userId: string): Promise<Organization[]> {
+    const orgIds = this.members.filter((m) => m.userId === userId).map((m) => m.organizationId);
+    return Array.from(this.orgs.values()).filter((o) => orgIds.includes(o.id));
+  }
+}
+
+export class InMemoryInvitationRepository implements InvitationRepository {
+  public invitations: Map<string, Invitation> = new Map();
+
+  async create(invitation: Omit<Invitation, "id" | "createdAt">): Promise<Invitation> {
+    const id = crypto.randomUUID();
+    const created: Invitation = { ...invitation, id, createdAt: new Date() };
+    this.invitations.set(id, created);
+    return created;
+  }
+
+  async findByToken(token: string): Promise<Invitation | null> {
+    for (const i of this.invitations.values()) {
+      if (i.token === token) return i;
+    }
+    return null;
+  }
+
+  async updateStatus(id: string, status: "PENDING" | "ACCEPTED" | "REVOKED"): Promise<void> {
+    const inv = this.invitations.get(id);
+    if (inv) {
+      inv.status = status;
+    }
+  }
+}
+
 export function createInMemoryAdapter(): DatabaseAdapter {
   return {
     users: new InMemoryUserRepository(),
     sessions: new InMemorySessionRepository(),
     verificationTokens: new InMemoryVerificationTokenRepository(),
+    roles: new InMemoryRoleRepository(),
+    organizations: new InMemoryOrganizationRepository(),
+    invitations: new InMemoryInvitationRepository(),
   };
 }
