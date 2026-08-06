@@ -10,6 +10,7 @@ import { drizzleAdapter } from "@authgate/drizzle";
 import { AuthService } from "@authgate/auth";
 import { SessionService } from "@authgate/session";
 import { AuthGateError } from "@authgate/shared";
+import { env } from "./env";
 
 type Env = {
   Variables: {
@@ -19,7 +20,7 @@ type Env = {
 };
 
 // 1. Initialize DB Connection & Adapter
-const databaseUrl = process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/authgate";
+const databaseUrl = env.DATABASE_URL;
 const queryClient = postgres(databaseUrl);
 const db = drizzle(queryClient);
 const adapter = drizzleAdapter(db);
@@ -32,7 +33,7 @@ const sessionService = new SessionService(authGate.database.sessions);
 const app = new Hono<Env>();
 
 app.use("*", cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"],
+  origin: env.ALLOWED_ORIGINS.split(","),
   credentials: true,
 }));
 
@@ -160,7 +161,7 @@ app.post("/api/auth/login", async (c) => {
 
   setCookie(c, "authgate_session", session.token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: env.NODE_ENV === "production",
     sameSite: "Lax",
     expires: session.expiresAt,
     path: "/",
@@ -267,7 +268,7 @@ app.get("/api/auth/me", authMiddleware, async (c) => {
 });
 
 export default {
-  port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
+  port: env.PORT,
   fetch: app.fetch,
 };
 export { app };
