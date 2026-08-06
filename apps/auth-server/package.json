@@ -11,6 +11,8 @@
     "@authgate/auth": "workspace:*",
     "@authgate/core": "workspace:*",
     "@authgate/drizzle": "workspace:*",
+    "@authgate/organization": "workspace:*",
+    "@authgate/rbac": "workspace:*",
     "@authgate/session": "workspace:*",
     "@authgate/shared": "workspace:*",
     "@t3-oss/env-core": "^0.13.11",
