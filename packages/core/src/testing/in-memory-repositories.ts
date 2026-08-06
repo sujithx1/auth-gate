@@ -289,6 +289,74 @@ export class InMemoryInvitationRepository implements InvitationRepository {
   }
 }
 
+import {
+  OAuthClient,
+  OAuthAuthorizationCode,
+  OAuthToken,
+  OAuthRepository,
+} from "../domain/oauth";
+
+export class InMemoryOAuthRepository implements OAuthRepository {
+  public clients: Map<string, OAuthClient> = new Map();
+  public codes: Map<string, OAuthAuthorizationCode> = new Map();
+  public tokens: Map<string, OAuthToken> = new Map();
+
+  async createClient(client: Omit<OAuthClient, "id" | "createdAt">): Promise<OAuthClient> {
+    const id = crypto.randomUUID();
+    const created: OAuthClient = { ...client, id, createdAt: new Date() };
+    this.clients.set(id, created);
+    return created;
+  }
+
+  async findClientById(clientId: string): Promise<OAuthClient | null> {
+    for (const c of this.clients.values()) {
+      if (c.clientId === clientId) return c;
+    }
+    return null;
+  }
+
+  async getUserClients(userId: string): Promise<OAuthClient[]> {
+    return Array.from(this.clients.values()).filter((c) => c.userId === userId);
+  }
+
+  async createAuthorizationCode(code: Omit<OAuthAuthorizationCode, "id" | "createdAt">): Promise<OAuthAuthorizationCode> {
+    const id = crypto.randomUUID();
+    const created: OAuthAuthorizationCode = { ...code, id, createdAt: new Date() };
+    this.codes.set(code.code, created);
+    return created;
+  }
+
+  async findAuthorizationCode(code: string): Promise<OAuthAuthorizationCode | null> {
+    return this.codes.get(code) || null;
+  }
+
+  async deleteAuthorizationCode(code: string): Promise<void> {
+    this.codes.delete(code);
+  }
+
+  async createToken(token: Omit<OAuthToken, "id" | "createdAt">): Promise<OAuthToken> {
+    const id = crypto.randomUUID();
+    const created: OAuthToken = { ...token, id, createdAt: new Date() };
+    this.tokens.set(token.accessToken, created);
+    return created;
+  }
+
+  async findTokenByAccessToken(accessToken: string): Promise<OAuthToken | null> {
+    return this.tokens.get(accessToken) || null;
+  }
+
+  async findTokenByRefreshToken(refreshToken: string): Promise<OAuthToken | null> {
+    for (const t of this.tokens.values()) {
+      if (t.refreshToken === refreshToken) return t;
+    }
+    return null;
+  }
+
+  async deleteToken(accessToken: string): Promise<void> {
+    this.tokens.delete(accessToken);
+  }
+}
+
 export function createInMemoryAdapter(): DatabaseAdapter {
   return {
     users: new InMemoryUserRepository(),
@@ -297,5 +365,6 @@ export function createInMemoryAdapter(): DatabaseAdapter {
     roles: new InMemoryRoleRepository(),
     organizations: new InMemoryOrganizationRepository(),
     invitations: new InMemoryInvitationRepository(),
+    oauth: new InMemoryOAuthRepository(),
   };
 }

@@ -1,6 +1,7 @@
 import { User, Session, VerificationToken, VerificationTokenType } from "./entities";
 import { RoleRepository } from "./rbac";
 import { OrganizationRepository, InvitationRepository } from "./organization";
+import { OAuthRepository } from "./oauth";
 
 export interface UserRepository {
   findById(id: string): Promise<User | null>;
@@ -32,4 +33,5 @@ export interface DatabaseAdapter {
   roles: RoleRepository;
   organizations: OrganizationRepository;
   invitations: InvitationRepository;
+  oauth: OAuthRepository;
 }
