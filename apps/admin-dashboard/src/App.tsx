@@ -8,8 +8,9 @@ import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
+import Organizations from "./pages/Organizations";
 
-type View = "login" | "register" | "verify" | "forgot" | "reset" | "dashboard";
+type View = "login" | "register" | "verify" | "forgot" | "reset" | "dashboard" | "orgs";
 
 interface UserProfile {
   id: string;
@@ -135,7 +136,10 @@ export default function App() {
           <ResetPassword initialToken={sharedToken} onSuccess={handleNotification} onNavigate={triggerNavigate} onError={handleErr} />
         )}
         {view === "dashboard" && user && (
-          <Dashboard user={user} onLogout={handleLogoutSuccess} onError={handleErr} />
+          <Dashboard user={user} onLogout={handleLogoutSuccess} onNavigateOrgs={() => triggerNavigate("orgs")} onError={handleErr} />
+        )}
+        {view === "orgs" && (
+          <Organizations onBack={() => triggerNavigate("dashboard")} onError={handleErr} />
         )}
       </div>
     </div>

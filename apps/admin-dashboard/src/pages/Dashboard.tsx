@@ -1,4 +1,4 @@
-import { User as UserIcon, LogOut } from "lucide-react";
+import { User as UserIcon, LogOut, Building2 } from "lucide-react";
 import { api } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../components/ui/card";
@@ -11,10 +11,11 @@ interface DashboardProps {
     createdAt: string;
   };
   onLogout: () => void;
+  onNavigateOrgs: () => void;
   onError: (msg: string) => void;
 }
 
-export default function Dashboard({ user, onLogout, onError }: DashboardProps) {
+export default function Dashboard({ user, onLogout, onNavigateOrgs, onError }: DashboardProps) {
   const handleLogout = async () => {
     try {
       await api.post("/api/auth/logout");
@@ -72,14 +73,23 @@ export default function Dashboard({ user, onLogout, onError }: DashboardProps) {
         </div>
       </CardContent>
       <CardFooter className="border-t border-border/60 pt-6">
-        <Button
-          variant="outline"
-          className="w-full border-red-900/40 text-red-400 hover:bg-red-950/20 hover:text-red-300"
-          onClick={handleLogout}
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Sign Out
-        </Button>
+        <div className="flex flex-col gap-3 w-full">
+          <Button
+            className="w-full bg-purple-600 hover:bg-purple-500 text-white"
+            onClick={onNavigateOrgs}
+          >
+            <Building2 className="w-4 h-4 mr-2" />
+            Manage Organizations
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full border-red-900/40 text-red-400 hover:bg-red-950/20 hover:text-red-300"
+            onClick={handleLogout}
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );
