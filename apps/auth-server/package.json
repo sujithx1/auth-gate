@@ -11,6 +11,7 @@
     "@authgate/auth": "workspace:*",
     "@authgate/core": "workspace:*",
     "@authgate/drizzle": "workspace:*",
+    "@authgate/oauth": "workspace:*",
     "@authgate/organization": "workspace:*",
     "@authgate/rbac": "workspace:*",
     "@authgate/session": "workspace:*",
