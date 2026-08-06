@@ -17,7 +17,7 @@ import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/ui/card";
 
-const API_URL = "http://localhost:3000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3005";
 
 type View = "login" | "register" | "verify" | "forgot" | "reset" | "dashboard";
 
