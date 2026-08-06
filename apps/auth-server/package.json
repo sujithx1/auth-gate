@@ -1,0 +1,17 @@
+{
+  "name": "auth-server",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "private": true,
+  "dependencies": {
+    "@authgate/core": "workspace:*",
+    "@authgate/shared": "workspace:*",
+    "@authgate/auth": "workspace:*",
+    "@authgate/session": "workspace:*",
+    "@authgate/drizzle": "workspace:*",
+    "hono": "^4.0.0",
+    "drizzle-orm": "^0.30.0",
+    "postgres": "^3.4.3",
+    "zod": "^3.22.4"
+  }
+}
