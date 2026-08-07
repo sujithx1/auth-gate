@@ -7,19 +7,28 @@ interface LandingProps {
 }
 
 export default function Landing({ onGoToConsole }: LandingProps) {
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem("authgate-theme");
+    return saved ? saved === "dark" : true;
+  });
   const [activeTab, setActiveTab] = useState<"install" | "client" | "usage">("install");
   const [copiedText, setCopiedText] = useState(false);
 
-  const toggleTheme = () => {
+  React.useEffect(() => {
     const root = window.document.documentElement;
     if (isDark) {
-      root.classList.remove("dark");
-      setIsDark(false);
-    } else {
       root.classList.add("dark");
-      setIsDark(true);
+    } else {
+      root.classList.remove("dark");
     }
+  }, [isDark]);
+
+  const toggleTheme = () => {
+    setIsDark((prev) => {
+      const next = !prev;
+      localStorage.setItem("authgate-theme", next ? "dark" : "light");
+      return next;
+    });
   };
 
   const copyCode = (text: string) => {
