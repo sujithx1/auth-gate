@@ -8,8 +8,8 @@
   ],
   "scripts": {
     "dev:server": "bun --watch apps/auth-server/src/index.ts",
-    "dev:dashboard": "bun --cwd apps/admin-dashboard dev",
-    "dev": "bun run dev:server & bun run dev:dashboard",
+    "dev:ui": "bun --cwd apps/ui dev",
+    "dev": "bun run dev:server & bun run dev:ui",
     "test": "bun test",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
