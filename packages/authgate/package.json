@@ -1,5 +1,5 @@
 {
-  "name": "authgate",
+  "name": "@sujithx/authgate",
   "version": "1.0.1",
   "main": "src/index.ts",
   "types": "src/index.ts",

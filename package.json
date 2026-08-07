@@ -1,6 +1,6 @@
 {
   "name": "authgate-monorepo",
-  "private": true,
+  "private": false,
   "workspaces": [
     "packages/*",
     "packages/adapters/*",
