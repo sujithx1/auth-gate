@@ -24,20 +24,29 @@ interface UserProfile {
 export default function App() {
   const [view, setView] = useState<View>("landing");
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem("authgate-theme");
+    return saved ? saved === "dark" : true;
+  });
   
   // Tokens (pre-filled from verification and reset actions)
   const [sharedToken, setSharedToken] = useState("");
 
-  const toggleTheme = () => {
+  useEffect(() => {
     const root = window.document.documentElement;
     if (isDark) {
-      root.classList.remove("dark");
-      setIsDark(false);
-    } else {
       root.classList.add("dark");
-      setIsDark(true);
+    } else {
+      root.classList.remove("dark");
     }
+  }, [isDark]);
+
+  const toggleTheme = () => {
+    setIsDark((prev) => {
+      const next = !prev;
+      localStorage.setItem("authgate-theme", next ? "dark" : "light");
+      return next;
+    });
   };
 
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +115,8 @@ export default function App() {
     setUser(null);
     setError(null);
     setInfo("Logged out successfully.");
+    localStorage.removeItem("authgate-theme");
+    setIsDark(true); // reset back to default dark theme
     setView("login");
   };
 
