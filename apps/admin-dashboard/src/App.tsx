@@ -10,8 +10,9 @@ import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Organizations from "./pages/Organizations";
 import Clients from "./pages/Clients";
+import Landing from "./pages/Landing";
 
-type View = "login" | "register" | "verify" | "forgot" | "reset" | "dashboard" | "orgs" | "clients";
+type View = "landing" | "login" | "register" | "verify" | "forgot" | "reset" | "dashboard" | "orgs" | "clients";
 
 interface UserProfile {
   id: string;
@@ -21,7 +22,7 @@ interface UserProfile {
 }
 
 export default function App() {
-  const [view, setView] = useState<View>("login");
+  const [view, setView] = useState<View>("landing");
   const [user, setUser] = useState<UserProfile | null>(null);
   
   // Tokens (pre-filled from verification and reset actions)
@@ -95,6 +96,10 @@ export default function App() {
     setInfo("Logged out successfully.");
     setView("login");
   };
+
+  if (view === "landing") {
+    return <Landing onGoToConsole={() => triggerNavigate(user ? "dashboard" : "login")} />;
+  }
 
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-slate-950 px-4 py-12">
