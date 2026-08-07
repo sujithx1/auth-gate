@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ShieldCheck, Sun, Moon, Laptop, Key, Building2, ChevronRight, Copy, Check, Code, BookOpen, Terminal } from "lucide-react";
+import { ShieldCheck, Sun, Moon, Laptop, Key, Building2, ChevronRight, Copy, Check } from "lucide-react";
 import { Button } from "../components/ui/button";
 
 interface LandingProps {

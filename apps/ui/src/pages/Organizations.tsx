@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Building2, UserPlus, Plus, Users, ArrowLeft, RefreshCw, Check, ShieldAlert } from "lucide-react";
+import { Building2, UserPlus, Plus, Users, ArrowLeft, RefreshCw, Check } from "lucide-react";
 import { api } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";

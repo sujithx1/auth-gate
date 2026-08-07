@@ -1,7 +1,7 @@
-import { User as UserIcon, LogOut, Building2, Laptop, ShieldCheck, Mail, Calendar, Key, UserCheck } from "lucide-react";
+import { User as UserIcon, LogOut, Building2, Laptop, ShieldCheck, Mail, Calendar, UserCheck } from "lucide-react";
 import { api } from "../lib/api";
 import { Button } from "../components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
 
 interface DashboardProps {
   user: {
