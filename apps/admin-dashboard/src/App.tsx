@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ShieldCheck, AlertCircle, MailCheck } from "lucide-react";
+import { ShieldCheck, AlertCircle, MailCheck, Sun, Moon } from "lucide-react";
 import { api } from "./lib/api";
 
 import Login from "./pages/Login";
@@ -24,9 +24,21 @@ interface UserProfile {
 export default function App() {
   const [view, setView] = useState<View>("landing");
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [isDark, setIsDark] = useState(true);
   
   // Tokens (pre-filled from verification and reset actions)
   const [sharedToken, setSharedToken] = useState("");
+
+  const toggleTheme = () => {
+    const root = window.document.documentElement;
+    if (isDark) {
+      root.classList.remove("dark");
+      setIsDark(false);
+    } else {
+      root.classList.add("dark");
+      setIsDark(true);
+    }
+  };
 
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -102,14 +114,23 @@ export default function App() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-slate-950 px-4 py-12">
-      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-purple-500/10 blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 rounded-full bg-violet-600/10 blur-[120px] pointer-events-none" />
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background text-foreground px-4 py-12 transition-colors duration-200">
+      <div className="absolute top-6 right-6 z-50">
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-lg bg-secondary border border-border text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
+      </div>
+
+      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-primary/5 blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-md z-10">
         <div className="flex items-center justify-center gap-2 mb-8 select-none">
-          <ShieldCheck className="w-9 h-9 text-purple-500" />
-          <h1 className="text-3xl font-bold tracking-tight text-white">Auth<span className="text-purple-500">Gate</span></h1>
+          <ShieldCheck className="w-9 h-9 text-primary" />
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Auth<span className="text-muted-foreground font-medium">Gate</span></h1>
         </div>
 
         {error && (
