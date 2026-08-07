@@ -40,9 +40,9 @@ export default function VerifyEmail({ initialToken = "", onSuccess, onNavigate, 
         </CardHeader>
         <CardContent className="space-y-4">
           {initialToken && (
-            <div className="p-3 bg-purple-950/20 border border-purple-800/40 rounded-lg text-xs space-y-1 text-slate-300">
-              <p className="font-semibold text-purple-400">Development Mode Token:</p>
-              <code className="block select-all break-all bg-slate-900/60 p-2 rounded border border-slate-800 text-purple-300">
+            <div className="p-3 bg-secondary/50 border border-border rounded-lg text-xs space-y-1 text-muted-foreground">
+              <p className="font-semibold text-primary">Development Mode Token:</p>
+              <code className="block select-all break-all bg-muted p-2 rounded border border-border text-foreground">
                 {initialToken}
               </code>
             </div>
