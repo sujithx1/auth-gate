@@ -65,7 +65,7 @@ export default function Register({ onSuccess, onNavigate, onError }: RegisterPro
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -77,12 +77,12 @@ export default function Register({ onSuccess, onNavigate, onError }: RegisterPro
             {loading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <UserPlus className="w-4 h-4 mr-2" />}
             Register User
           </Button>
-          <p className="text-center text-xs text-slate-400">
+          <p className="text-center text-xs text-muted-foreground">
             Already have an account?{" "}
             <button
               type="button"
               onClick={() => onNavigate("login")}
-              className="text-purple-400 hover:text-purple-300 font-medium hover:underline"
+              className="text-primary hover:underline font-semibold"
             >
               Log in
             </button>

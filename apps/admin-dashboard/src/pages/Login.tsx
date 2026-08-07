@@ -58,7 +58,7 @@ export default function Login({ onSuccess, onNavigate, onError }: LoginProps) {
               <button
                 type="button"
                 onClick={() => onNavigate("forgot")}
-                className="text-xs text-purple-400 hover:text-purple-300 hover:underline"
+                className="text-xs text-muted-foreground hover:text-foreground hover:underline"
               >
                 Forgot password?
               </button>
@@ -75,7 +75,7 @@ export default function Login({ onSuccess, onNavigate, onError }: LoginProps) {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -87,12 +87,12 @@ export default function Login({ onSuccess, onNavigate, onError }: LoginProps) {
             {loading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <KeyRound className="w-4 h-4 mr-2" />}
             Sign In
           </Button>
-          <p className="text-center text-xs text-slate-400">
+          <p className="text-center text-xs text-muted-foreground">
             Don't have an account?{" "}
             <button
               type="button"
               onClick={() => onNavigate("register")}
-              className="text-purple-400 hover:text-purple-300 font-medium hover:underline"
+              className="text-primary hover:underline font-semibold"
             >
               Register here
             </button>
