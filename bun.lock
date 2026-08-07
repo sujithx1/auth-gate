@@ -76,6 +76,13 @@
         "@authgate/shared": "workspace:*",
       },
     },
+    "packages/authgate": {
+      "name": "authgate",
+      "version": "0.1.0",
+      "dependencies": {
+        "@authgate/shared": "workspace:*",
+      },
+    },
     "packages/core": {
       "name": "@authgate/core",
       "version": "0.1.0",
@@ -331,6 +338,8 @@
     "asynckit": ["asynckit@0.4.0", "", {}, "sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q=="],
 
     "auth-server": ["auth-server@workspace:apps/auth-server"],
+
+    "authgate": ["authgate@workspace:packages/authgate"],
 
     "autoprefixer": ["autoprefixer@10.5.4", "", { "dependencies": { "browserslist": "^4.28.6", "caniuse-lite": "^1.0.30001806", "fraction.js": "^5.3.4", "picocolors": "^1.1.1", "postcss-value-parser": "^4.2.0" }, "peerDependencies": { "postcss": "^8.1.0" }, "bin": { "autoprefixer": "bin/autoprefixer" } }, "sha512-MaU0U/za7N3r6brxD4YB/l4NSrFzLPlANv6wEuQVaIPlD3L4W9rFcQPbL/EilY9BHhHvhfcz3gInDLrEtWT4EA=="],
 
