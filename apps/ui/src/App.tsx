@@ -113,6 +113,58 @@ export default function App() {
     return <Landing onGoToConsole={() => triggerNavigate(user ? "dashboard" : "login")} />;
   }
 
+  if (view === "dashboard" && user) {
+    return (
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-200 p-6">
+        <div className="absolute top-6 right-6 z-50">
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg bg-secondary border border-border text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+        </div>
+        <Dashboard user={user} onLogout={handleLogoutSuccess} onNavigateOrgs={() => triggerNavigate("orgs")} onNavigateClients={() => triggerNavigate("clients")} onError={handleErr} />
+      </div>
+    );
+  }
+
+  if (view === "orgs") {
+    return (
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-200 p-6 md:p-12">
+        <div className="absolute top-6 right-6 z-50">
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg bg-secondary border border-border text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+        </div>
+        <div className="max-w-5xl mx-auto">
+          <Organizations onBack={() => triggerNavigate("dashboard")} onError={handleErr} />
+        </div>
+      </div>
+    );
+  }
+
+  if (view === "clients") {
+    return (
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-200 p-6 md:p-12">
+        <div className="absolute top-6 right-6 z-50">
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg bg-secondary border border-border text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+        </div>
+        <div className="max-w-5xl mx-auto">
+          <Clients onBack={() => triggerNavigate("dashboard")} onError={handleErr} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background text-foreground px-4 py-12 transition-colors duration-200">
       <div className="absolute top-6 right-6 z-50">
@@ -161,15 +213,6 @@ export default function App() {
         )}
         {view === "reset" && (
           <ResetPassword initialToken={sharedToken} onSuccess={handleNotification} onNavigate={triggerNavigate} onError={handleErr} />
-        )}
-        {view === "dashboard" && user && (
-          <Dashboard user={user} onLogout={handleLogoutSuccess} onNavigateOrgs={() => triggerNavigate("orgs")} onNavigateClients={() => triggerNavigate("clients")} onError={handleErr} />
-        )}
-        {view === "orgs" && (
-          <Organizations onBack={() => triggerNavigate("dashboard")} onError={handleErr} />
-        )}
-        {view === "clients" && (
-          <Clients onBack={() => triggerNavigate("dashboard")} onError={handleErr} />
         )}
       </div>
     </div>
