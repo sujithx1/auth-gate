@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ShieldCheck } from "lucide-react";
 import ResetPassword from "../pages/ResetPassword";
 
-interface ResetSearchParams {
+export interface ResetSearchParams {
   token?: string;
 }
 

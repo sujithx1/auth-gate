@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ShieldCheck } from "lucide-react";
 import VerifyEmail from "../pages/VerifyEmail";
 
-interface VerifySearchParams {
+export interface VerifySearchParams {
   token?: string;
 }
 
