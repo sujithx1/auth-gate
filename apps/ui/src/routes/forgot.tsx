@@ -21,7 +21,7 @@ function ForgotComponent() {
         <ForgotPassword
           onSuccess={(token) => {
             if (token) {
-              navigate({ to: "/reset", search: { token } });
+              navigate({ to: "/reset" as any, search: { token } as any });
             } else {
               navigate({ to: "/login" });
             }
