@@ -1,0 +1,10 @@
+{
+  "name": "test-client",
+  "version": "0.1.0",
+  "main": "index.ts",
+  "private": true,
+  "dependencies": {
+    "@sujithx/authgate": "workspace:*",
+    "hono": "^4.6.0"
+  }
+}
