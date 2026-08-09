@@ -18,20 +18,82 @@ export default function Login({ onSuccess, onNavigate, onError }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // 2FA state
+  const [twoFactorRequired, setTwoFactorRequired] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [tempUserId, setTempUserId] = useState("");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(false);
     setLoading(true);
 
     try {
-      const data: any = await api.post("/api/auth/login", { email, password });
-      onSuccess(data.data.user);
+      if (twoFactorRequired) {
+        // Step 2: verify 2FA code
+        const data: any = await api.post("/api/auth/login/verify-2fa", {
+          userId: tempUserId,
+          code: twoFactorCode,
+        });
+        onSuccess(data.data.user);
+      } else {
+        // Step 1: verify email & password
+        const data: any = await api.post("/api/auth/login", { email, password });
+        if (data.twoFactorRequired) {
+          setTwoFactorRequired(true);
+          setTempUserId(data.userId);
+        } else {
+          onSuccess(data.data.user);
+        }
+      }
     } catch (e: any) {
       onError(e.error?.message || "Failed to log in.");
     } finally {
       setLoading(false);
     }
   };
+
+  if (twoFactorRequired) {
+    return (
+      <Card>
+        <form onSubmit={handleSubmit}>
+          <CardHeader>
+            <CardTitle>Two-Factor Verification</CardTitle>
+            <CardDescription>Enter the 6-digit authenticator passcode or a backup recovery code.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="login-2fa-code">Verification Code</Label>
+              <Input
+                id="login-2fa-code"
+                type="text"
+                maxLength={8}
+                placeholder="123456"
+                value={twoFactorCode}
+                onChange={(e) => setTwoFactorCode(e.target.value)}
+                required
+              />
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <KeyRound className="w-4 h-4 mr-2" />}
+              Verify Code
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setTwoFactorRequired(false);
+                setTwoFactorCode("");
+              }}
+              className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+            >
+              Back to Login
+            </button>
+          </CardFooter>
+        </form>
+      </Card>
+    );
+  }
 
   return (
     <Card>
