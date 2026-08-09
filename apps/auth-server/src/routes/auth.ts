@@ -66,8 +66,53 @@ export function createAuthRouter(
     const body = await c.req.json();
     const parsed = loginSchema.parse(body);
 
-    const user = await authService.login(parsed.email, parsed.password);
-    
+    try {
+      const user = await authService.login(parsed.email, parsed.password);
+      
+      const userAgent = c.req.header("user-agent");
+      const ipAddress = c.req.header("x-forwarded-for") || "127.0.0.1";
+
+      const session = await sessionService.createSession(user.id, userAgent, ipAddress);
+
+      setCookie(c, "authgate_session", session.token, {
+        httpOnly: true,
+        secure: env.NODE_ENV === "production",
+        sameSite: "Lax",
+        expires: session.expiresAt,
+        path: "/",
+      });
+
+      return c.json({
+        success: true,
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            isEmailVerified: user.isEmailVerified,
+          },
+        },
+      });
+    } catch (err: any) {
+      if (err.code === "TWO_FACTOR_REQUIRED") {
+        return c.json({
+          success: true,
+          twoFactorRequired: true,
+          userId: err.details.userId,
+        });
+      }
+      throw err;
+    }
+  });
+
+  /**
+   * Login second step: verify 2FA code or backup code.
+   */
+  router.post("/login/verify-2fa", async (c) => {
+    const body = await c.req.json();
+    const parsed = z.object({ userId: z.string(), code: z.string() }).parse(body);
+
+    const user = await authService.loginWithTwoFactor(parsed.userId, parsed.code);
+
     const userAgent = c.req.header("user-agent");
     const ipAddress = c.req.header("x-forwarded-for") || "127.0.0.1";
 
@@ -91,6 +136,37 @@ export function createAuthRouter(
         },
       },
     });
+  });
+
+  /**
+   * Enable 2FA TOTP secret.
+   */
+  router.post("/2fa/enable", authMiddleware, async (c) => {
+    const user = c.get("user");
+    const { secret, uri } = await authService.enableTwoFactor(user.id);
+    return c.json({ success: true, secret, uri });
+  });
+
+  /**
+   * Verify and activate 2FA TOTP secret.
+   */
+  router.post("/2fa/verify", authMiddleware, async (c) => {
+    const user = c.get("user");
+    const body = await c.req.json();
+    const parsed = z.object({ code: z.string() }).parse(body);
+    const { backupCodes } = await authService.verifyTwoFactor(user.id, parsed.code);
+    return c.json({ success: true, backupCodes });
+  });
+
+  /**
+   * Disable 2FA.
+   */
+  router.post("/2fa/disable", authMiddleware, async (c) => {
+    const user = c.get("user");
+    const body = await c.req.json();
+    const parsed = z.object({ code: z.string() }).parse(body);
+    await authService.disableTwoFactor(user.id, parsed.code);
+    return c.json({ success: true });
   });
 
   /**
