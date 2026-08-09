@@ -3,12 +3,14 @@ import {
   Session,
   VerificationToken,
   VerificationTokenType,
+  TwoFactorSecret,
 } from "../domain/entities";
 
 import {
   UserRepository,
   SessionRepository,
   VerificationTokenRepository,
+  TwoFactorRepository,
   DatabaseAdapter,
 } from "../domain/repositories";
 
@@ -357,6 +359,39 @@ export class InMemoryOAuthRepository implements OAuthRepository {
   }
 }
 
+export class InMemoryTwoFactorRepository implements TwoFactorRepository {
+  public secrets: Map<string, TwoFactorSecret> = new Map();
+
+  async findByUserId(userId: string): Promise<TwoFactorSecret | null> {
+    for (const s of this.secrets.values()) {
+      if (s.userId === userId) return s;
+    }
+    return null;
+  }
+
+  async createOrUpdate(secret: Omit<TwoFactorSecret, "id" | "createdAt">): Promise<TwoFactorSecret> {
+    const existing = await this.findByUserId(secret.userId);
+    const now = new Date();
+    if (existing) {
+      const updated = { ...existing, ...secret };
+      this.secrets.set(existing.id, updated);
+      return updated;
+    } else {
+      const id = crypto.randomUUID();
+      const created = { ...secret, id, createdAt: now };
+      this.secrets.set(id, created);
+      return created;
+    }
+  }
+
+  async deleteByUserId(userId: string): Promise<void> {
+    const existing = await this.findByUserId(userId);
+    if (existing) {
+      this.secrets.delete(existing.id);
+    }
+  }
+}
+
 export function createInMemoryAdapter(): DatabaseAdapter {
   return {
     users: new InMemoryUserRepository(),
@@ -366,5 +401,6 @@ export function createInMemoryAdapter(): DatabaseAdapter {
     organizations: new InMemoryOrganizationRepository(),
     invitations: new InMemoryInvitationRepository(),
     oauth: new InMemoryOAuthRepository(),
+    twoFactor: new InMemoryTwoFactorRepository(),
   };
 }

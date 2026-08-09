@@ -27,3 +27,12 @@ export interface VerificationToken {
   expiresAt: Date;
   createdAt: Date;
 }
+
+export interface TwoFactorSecret {
+  id: string;
+  userId: string;
+  secret: string;
+  isActive: boolean;
+  backupCodes: string[];
+  createdAt: Date;
+}
