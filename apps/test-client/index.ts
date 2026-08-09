@@ -10,8 +10,8 @@ let oauthStore = {
 };
 
 // Target AuthGate configurations
-const CLIENT_ID = "test-client-id"; // Set this to the client ID registered in console
-const CLIENT_SECRET = "test-client-secret";
+const CLIENT_ID = "2d048fbc3fa691553c5b42244c315406"; // Set this to the client ID registered in console
+const CLIENT_SECRET = "77a1ccb0864869a4959340dd8e5642bc947160489491a609ce9e68b66827750f";
 const AUTHGATE_URL = "http://localhost:3005";
 const REDIRECT_URI = "http://localhost:3006/callback";
 
