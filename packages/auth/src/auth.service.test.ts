@@ -8,7 +8,11 @@ describe("AuthService", () => {
 
   beforeEach(() => {
     adapter = createInMemoryAdapter();
-    authService = new AuthService(adapter.users, adapter.verificationTokens);
+    authService = new AuthService(
+      adapter.users,
+      adapter.verificationTokens,
+      adapter.twoFactor
+    );
   });
 
   it("should register a new user and create email verification token", async () => {
