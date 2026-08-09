@@ -147,3 +147,15 @@ export const oauthTokens = pgTable("oauth_tokens", {
   scope: varchar("scope", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const twoFactorSecrets = pgTable("two_factor_secrets", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull()
+    .unique(),
+  secret: varchar("secret", { length: 255 }).notNull(),
+  isActive: boolean("is_active").default(false).notNull(),
+  backupCodes: text("backup_codes").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

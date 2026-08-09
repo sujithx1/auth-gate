@@ -19,6 +19,8 @@ import {
   OAuthAuthorizationCode,
   OAuthToken,
   OAuthRepository,
+  TwoFactorSecret,
+  TwoFactorRepository,
 } from "@authgate/core";
 import * as schema from "./schema";
 
@@ -376,5 +378,47 @@ export class DrizzleOAuthRepository implements OAuthRepository {
 
   async deleteToken(accessToken: string): Promise<void> {
     await this.db.delete(schema.oauthTokens).where(eq(schema.oauthTokens.accessToken, accessToken));
+  }
+}
+
+export class DrizzleTwoFactorRepository implements TwoFactorRepository {
+  constructor(private readonly db: any) {}
+
+  async findByUserId(userId: string): Promise<TwoFactorSecret | null> {
+    const results = await this.db.select().from(schema.twoFactorSecrets).where(eq(schema.twoFactorSecrets.userId, userId)).limit(1);
+    const raw = results[0];
+    if (!raw) return null;
+    return {
+      ...raw,
+      backupCodes: JSON.parse(raw.backupCodes) as string[],
+    };
+  }
+
+  async createOrUpdate(secret: Omit<TwoFactorSecret, "id" | "createdAt">): Promise<TwoFactorSecret> {
+    const existing = await this.findByUserId(secret.userId);
+    const dbValue = {
+      ...secret,
+      backupCodes: JSON.stringify(secret.backupCodes),
+    };
+
+    if (existing) {
+      const results = await this.db.update(schema.twoFactorSecrets).set(dbValue).where(eq(schema.twoFactorSecrets.userId, secret.userId)).returning();
+      const raw = results[0];
+      return {
+        ...raw,
+        backupCodes: JSON.parse(raw.backupCodes) as string[],
+      };
+    } else {
+      const results = await this.db.insert(schema.twoFactorSecrets).values(dbValue).returning();
+      const raw = results[0];
+      return {
+        ...raw,
+        backupCodes: JSON.parse(raw.backupCodes) as string[],
+      };
+    }
+  }
+
+  async deleteByUserId(userId: string): Promise<void> {
+    await this.db.delete(schema.twoFactorSecrets).where(eq(schema.twoFactorSecrets.userId, userId));
   }
 }
