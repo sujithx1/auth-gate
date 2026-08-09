@@ -251,6 +251,10 @@ export class AuthService {
     return token;
   }
 
+  async getTwoFactorStatus(userId: string) {
+    return this.twoFactorRepo.findByUserId(userId);
+  }
+
   /**
    * Resets the user's password using the reset token.
    */

@@ -243,6 +243,7 @@ export function createAuthRouter(
    */
   router.get("/me", authMiddleware, async (c) => {
     const user = c.get("user");
+    const mfa = await authService.getTwoFactorStatus(user.id);
     return c.json({
       success: true,
       data: {
@@ -251,6 +252,7 @@ export function createAuthRouter(
           email: user.email,
           isEmailVerified: user.isEmailVerified,
           createdAt: user.createdAt,
+          is2faActive: !!(mfa && mfa.isActive),
         },
       },
     });
