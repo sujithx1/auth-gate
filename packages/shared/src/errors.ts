@@ -17,8 +17,8 @@ export class NotFoundError extends AuthGateError {
 }
 
 export class UnauthorizedError extends AuthGateError {
-  constructor(message: string, code: string = 'UNAUTHORIZED') {
-    super(code, message, 401);
+  constructor(message: string, code: string = 'UNAUTHORIZED', details?: unknown) {
+    super(code, message, 401, details);
   }
 }
 
