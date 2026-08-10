@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User as UserIcon, LogOut, Building2, Laptop, ShieldCheck, Mail, Calendar, UserCheck, Shield, RefreshCw, QrCode } from "lucide-react";
 import { api } from "../lib/api";
 import { Button } from "../components/ui/button";
@@ -27,6 +27,32 @@ export default function Dashboard({ user, onLogout, onNavigateOrgs, onNavigateCl
   const [mfaUri, setMfaUri] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
+  const [sessions, setSessions] = useState<any[]>([]);
+
+  const fetchSessions = async () => {
+    try {
+      const res: any = await api.get("/api/auth/sessions");
+      setSessions(res.data || []);
+    } catch {
+      // Silently ignore failures
+    }
+  };
+
+  useEffect(() => {
+    fetchSessions();
+  }, []);
+
+  const handleRevokeSession = async (id: string) => {
+    setLoading(true);
+    try {
+      await api.delete(`/api/auth/sessions/${id}`);
+      fetchSessions();
+    } catch (e: any) {
+      onError(e.error?.message || "Failed to revoke session.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -269,55 +295,105 @@ export default function Dashboard({ user, onLogout, onNavigateOrgs, onNavigateCl
           </Card>
         </div>
 
-        {/* Quick Setup Guide */}
-        <Card className="md:col-span-2 border-border">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-primary" />
-              <CardTitle className="text-lg">Active Integration Guides</CardTitle>
-            </div>
-            <CardDescription>Integrate AuthGate in your local server app</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
-                  1
-                </div>
-                <div className="space-y-1">
-                  <h4 className="font-semibold text-sm">Configure Client Adapter</h4>
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    Set up your backend connection with your database adapter. We support Drizzle adapters natively out of the box.
-                  </p>
-                </div>
+        <div className="md:col-span-2 space-y-6">
+          {/* Quick Setup Guide */}
+          <Card className="border-border">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-primary" />
+                <CardTitle className="text-lg">Active Integration Guides</CardTitle>
               </div>
+              <CardDescription>Integrate AuthGate in your local server app</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                    1
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-sm">Configure Client Adapter</h4>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Set up your backend connection with your database adapter. We support Drizzle adapters natively out of the box.
+                    </p>
+                  </div>
+                </div>
 
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
-                  2
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                    2
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-sm">Define Roles and Custom Permissions</h4>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Head to Organizations tab to invite team members and set roles (`ADMIN`, `MEMBER`). Set up route middleware authorization checks.
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <h4 className="font-semibold text-sm">Define Roles and Custom Permissions</h4>
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    Head to Organizations tab to invite team members and set roles (`ADMIN`, `MEMBER`). Set up route middleware authorization checks.
-                  </p>
-                </div>
-              </div>
 
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
-                  3
-                </div>
-                <div className="space-y-1">
-                  <h4 className="font-semibold text-sm">Register Client Credentials</h4>
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    Create client credentials under Developer Clients to support PKCE-guarded authorization exchanges.
-                  </p>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                    3
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-sm">Register Client Credentials</h4>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Create client credentials under Developer Clients to support PKCE-guarded authorization exchanges.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Active Sessions Card */}
+          <Card className="border-border">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-primary" />
+                <CardTitle className="text-lg">Logged-in Sessions</CardTitle>
+              </div>
+              <CardDescription>Revoke access tokens and sign out of other active browsers</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {sessions.length === 0 ? (
+                <div className="text-xs text-muted-foreground">No active sessions found.</div>
+              ) : (
+                <div className="space-y-4">
+                  {sessions.map((s) => (
+                    <div key={s.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-card/50 rounded-lg border border-border gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-foreground break-all">{s.userAgent}</span>
+                          {s.isCurrent && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+                              This Device
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground flex gap-3">
+                          <span>IP: {s.ipAddress}</span>
+                          <span>•</span>
+                          <span>Expires: {new Date(s.expiresAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      {!s.isCurrent && (
+                        <Button
+                          onClick={() => handleRevokeSession(s.id)}
+                          variant="outline"
+                          size="sm"
+                          className="border-destructive/20 text-destructive hover:bg-destructive/10"
+                        >
+                          Revoke Access
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
