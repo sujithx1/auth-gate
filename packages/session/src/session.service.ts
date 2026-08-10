@@ -53,4 +53,22 @@ export class SessionService {
   async cleanExpiredSessions(): Promise<void> {
     await this.sessionRepo.deleteExpired();
   }
+
+  /**
+   * Returns all active sessions for a user.
+   */
+  async getUserSessions(userId: string): Promise<Session[]> {
+    return this.sessionRepo.findActiveByUserId(userId);
+  }
+
+  /**
+   * Revokes a specific session belonging to a user.
+   */
+  async revokeSession(id: string, userId: string): Promise<void> {
+    const session = await this.sessionRepo.findById(id);
+    if (!session || session.userId !== userId) {
+      throw new Error("Session not found or unauthorized.");
+    }
+    await this.sessionRepo.deleteById(id);
+  }
 }

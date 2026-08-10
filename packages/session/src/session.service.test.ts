@@ -35,4 +35,23 @@ describe("SessionService", () => {
     const retrieved = await sessionService.validateSession(session.token);
     expect(retrieved).toBeNull();
   });
+
+  it("should query all active sessions and revoke targeted sessions successfully", async () => {
+    const userId = crypto.randomUUID();
+    const session1 = await sessionService.createSession(userId, "Device A", "1.1.1.1");
+    const session2 = await sessionService.createSession(userId, "Device B", "2.2.2.2");
+
+    // Fetch active sessions
+    const active = await sessionService.getUserSessions(userId);
+    expect(active.length).toBe(2);
+    expect(active.map((s) => s.id)).toContain(session1.id);
+    expect(active.map((s) => s.id)).toContain(session2.id);
+
+    // Revoke session1
+    await sessionService.revokeSession(session1.id, userId);
+
+    const activePostRevoke = await sessionService.getUserSessions(userId);
+    expect(activePostRevoke.length).toBe(1);
+    expect(activePostRevoke[0].id).toBe(session2.id);
+  });
 });
