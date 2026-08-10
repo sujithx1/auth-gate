@@ -310,5 +310,35 @@ export function createAuthRouter(
     });
   });
 
+  /**
+   * List all active sessions for currently logged-in user.
+   */
+  router.get("/sessions", authMiddleware, async (c) => {
+    const user = c.get("user");
+    const active = await sessionService.getUserSessions(user.id);
+    const currentToken = getCookie(c, "authgate_session");
+
+    return c.json({
+      success: true,
+      data: active.map((s) => ({
+        id: s.id,
+        userAgent: s.userAgent || "Unknown Device",
+        ipAddress: s.ipAddress || "Unknown IP",
+        expiresAt: s.expiresAt,
+        isCurrent: s.token === currentToken,
+      })),
+    });
+  });
+
+  /**
+   * Revoke a targeted active session.
+   */
+  router.delete("/sessions/:id", authMiddleware, async (c) => {
+    const user = c.get("user");
+    const id = c.req.param("id");
+    await sessionService.revokeSession(id, user.id);
+    return c.json({ success: true });
+  });
+
   return router;
 }
