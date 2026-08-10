@@ -121,6 +121,17 @@ export class DrizzleSessionRepository implements SessionRepository {
   async deleteExpired(): Promise<void> {
     await this.db.delete(schema.sessions).where(lt(schema.sessions.expiresAt, new Date()));
   }
+
+  async findActiveByUserId(userId: string): Promise<Session[]> {
+    return this.db
+      .select()
+      .from(schema.sessions)
+      .where(and(eq(schema.sessions.userId, userId), gt(schema.sessions.expiresAt, new Date())));
+  }
+
+  async deleteById(id: string): Promise<void> {
+    await this.db.delete(schema.sessions).where(eq(schema.sessions.id, id));
+  }
 }
 
 export class DrizzleVerificationTokenRepository implements VerificationTokenRepository {
