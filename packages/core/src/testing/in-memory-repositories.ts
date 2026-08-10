@@ -106,6 +106,21 @@ export class InMemorySessionRepository implements SessionRepository {
       }
     }
   }
+
+  async findActiveByUserId(userId: string): Promise<Session[]> {
+    const now = new Date();
+    const active: Session[] = [];
+    for (const session of this.sessions.values()) {
+      if (session.userId === userId && new Date(session.expiresAt) > now) {
+        active.push(session);
+      }
+    }
+    return active;
+  }
+
+  async deleteById(id: string): Promise<void> {
+    this.sessions.delete(id);
+  }
 }
 
 export class InMemoryVerificationTokenRepository implements VerificationTokenRepository {

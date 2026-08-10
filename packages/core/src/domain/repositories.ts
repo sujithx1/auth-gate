@@ -17,6 +17,8 @@ export interface SessionRepository {
   create(session: Omit<Session, "id" | "createdAt">): Promise<Session>;
   deleteByToken(token: string): Promise<void>;
   deleteExpired(): Promise<void>;
+  findActiveByUserId(userId: string): Promise<Session[]>;
+  deleteById(id: string): Promise<void>;
 }
 
 export interface VerificationTokenRepository {
