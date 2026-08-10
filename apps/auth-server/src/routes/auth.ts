@@ -258,5 +258,57 @@ export function createAuthRouter(
     });
   });
 
+  /**
+   * Generate OTP verification code mediator endpoint.
+   */
+  router.post("/otp/generate", async (c) => {
+    const body = await c.req.json();
+    const parsed = z.object({
+      identifier: z.string(),
+      length: z.number().min(4).max(8).optional(),
+      expiresSeconds: z.number().optional(),
+    }).parse(body);
+
+    const { code } = await authService.generateOtp(parsed.identifier, parsed.length, parsed.expiresSeconds);
+    return c.json({ success: true, code });
+  });
+
+  /**
+   * Verify OTP code and issue session token endpoint.
+   */
+  router.post("/otp/verify", async (c) => {
+    const body = await c.req.json();
+    const parsed = z.object({
+      identifier: z.string(),
+      code: z.string(),
+    }).parse(body);
+
+    const user = await authService.verifyOtp(parsed.identifier, parsed.code);
+
+    const userAgent = c.req.header("user-agent");
+    const ipAddress = c.req.header("x-forwarded-for") || "127.0.0.1";
+
+    const session = await sessionService.createSession(user.id, userAgent, ipAddress);
+
+    setCookie(c, "authgate_session", session.token, {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: "Lax",
+      expires: session.expiresAt,
+      path: "/",
+    });
+
+    return c.json({
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          isEmailVerified: user.isEmailVerified,
+        },
+      },
+    });
+  });
+
   return router;
 }

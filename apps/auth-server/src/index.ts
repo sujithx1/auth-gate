@@ -28,7 +28,12 @@ const db = drizzle(queryClient);
 const adapter = drizzleAdapter(db);
 
 const authGate = createAuthGate({ database: adapter });
-const authService = new AuthService(authGate.database.users, authGate.database.verificationTokens, authGate.database.twoFactor);
+const authService = new AuthService(
+  authGate.database.users,
+  authGate.database.verificationTokens,
+  authGate.database.twoFactor,
+  authGate.database.otpCodes
+);
 const sessionService = new SessionService(authGate.database.sessions);
 
 // 2. Initialize Hono App
