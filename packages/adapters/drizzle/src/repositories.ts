@@ -1,4 +1,4 @@
-import { eq, and, lt } from "drizzle-orm";
+import { eq, and, lt, gt } from "drizzle-orm";
 import {
   User,
   UserRepository,
@@ -21,6 +21,8 @@ import {
   OAuthRepository,
   TwoFactorSecret,
   TwoFactorRepository,
+  OtpCode,
+  OtpRepository,
 } from "@authgate/core";
 import * as schema from "./schema";
 
@@ -420,5 +422,40 @@ export class DrizzleTwoFactorRepository implements TwoFactorRepository {
 
   async deleteByUserId(userId: string): Promise<void> {
     await this.db.delete(schema.twoFactorSecrets).where(eq(schema.twoFactorSecrets.userId, userId));
+  }
+}
+
+export class DrizzleOtpRepository implements OtpRepository {
+  constructor(private readonly db: any) {}
+
+  async findActiveByIdentifier(identifier: string): Promise<OtpCode | null> {
+    const now = new Date();
+    const results = await this.db.select()
+      .from(schema.otpCodes)
+      .where(and(eq(schema.otpCodes.identifier, identifier), gt(schema.otpCodes.expiresAt, now)))
+      .limit(1);
+    return results[0] || null;
+  }
+
+  async create(otp: Omit<OtpCode, "id" | "createdAt">): Promise<OtpCode> {
+    // Delete existing codes for this identifier first
+    await this.deleteByIdentifier(otp.identifier);
+
+    const results = await this.db.insert(schema.otpCodes).values(otp).returning();
+    return results[0];
+  }
+
+  async incrementAttempts(id: string): Promise<void> {
+    const results = await this.db.select().from(schema.otpCodes).where(eq(schema.otpCodes.id, id)).limit(1);
+    const existing = results[0];
+    if (existing) {
+      await this.db.update(schema.otpCodes)
+        .set({ attempts: existing.attempts + 1 })
+        .where(eq(schema.otpCodes.id, id));
+    }
+  }
+
+  async deleteByIdentifier(identifier: string): Promise<void> {
+    await this.db.delete(schema.otpCodes).where(eq(schema.otpCodes.identifier, identifier));
   }
 }

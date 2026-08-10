@@ -6,6 +6,7 @@ import {
   timestamp,
   jsonb,
   text,
+  integer,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -158,5 +159,14 @@ export const twoFactorSecrets = pgTable("two_factor_secrets", {
   secret: varchar("secret", { length: 255 }).notNull(),
   isActive: boolean("is_active").default(false).notNull(),
   backupCodes: text("backup_codes").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const otpCodes = pgTable("otp_codes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  identifier: varchar("identifier", { length: 255 }).notNull().unique(),
+  codeHash: varchar("code_hash", { length: 255 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  attempts: integer("attempts").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
