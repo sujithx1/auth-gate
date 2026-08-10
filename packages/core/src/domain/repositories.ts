@@ -1,4 +1,4 @@
-import { User, Session, VerificationToken, VerificationTokenType, TwoFactorSecret } from "./entities";
+import { User, Session, VerificationToken, VerificationTokenType, TwoFactorSecret, OtpCode } from "./entities";
 import { RoleRepository } from "./rbac";
 import { OrganizationRepository, InvitationRepository } from "./organization";
 import { OAuthRepository } from "./oauth";
@@ -32,6 +32,13 @@ export interface TwoFactorRepository {
   deleteByUserId(userId: string): Promise<void>;
 }
 
+export interface OtpRepository {
+  findActiveByIdentifier(identifier: string): Promise<OtpCode | null>;
+  create(otp: Omit<OtpCode, "id" | "createdAt">): Promise<OtpCode>;
+  incrementAttempts(id: string): Promise<void>;
+  deleteByIdentifier(identifier: string): Promise<void>;
+}
+
 export interface DatabaseAdapter {
   users: UserRepository;
   sessions: SessionRepository;
@@ -41,4 +48,5 @@ export interface DatabaseAdapter {
   invitations: InvitationRepository;
   oauth: OAuthRepository;
   twoFactor: TwoFactorRepository;
+  otpCodes: OtpRepository;
 }

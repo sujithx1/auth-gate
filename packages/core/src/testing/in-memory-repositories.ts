@@ -4,6 +4,7 @@ import {
   VerificationToken,
   VerificationTokenType,
   TwoFactorSecret,
+  OtpCode,
 } from "../domain/entities";
 
 import {
@@ -11,6 +12,7 @@ import {
   SessionRepository,
   VerificationTokenRepository,
   TwoFactorRepository,
+  OtpRepository,
   DatabaseAdapter,
 } from "../domain/repositories";
 
@@ -392,6 +394,49 @@ export class InMemoryTwoFactorRepository implements TwoFactorRepository {
   }
 }
 
+export class InMemoryOtpRepository implements OtpRepository {
+  public otps: Map<string, OtpCode> = new Map();
+
+  async findActiveByIdentifier(identifier: string): Promise<OtpCode | null> {
+    const now = new Date();
+    for (const o of this.otps.values()) {
+      if (o.identifier === identifier && o.expiresAt > now) {
+        return o;
+      }
+    }
+    return null;
+  }
+
+  async create(otp: Omit<OtpCode, "id" | "createdAt">): Promise<OtpCode> {
+    // Delete existing codes for this identifier first
+    await this.deleteByIdentifier(otp.identifier);
+
+    const id = crypto.randomUUID();
+    const created: OtpCode = {
+      ...otp,
+      id,
+      createdAt: new Date(),
+    };
+    this.otps.set(id, created);
+    return created;
+  }
+
+  async incrementAttempts(id: string): Promise<void> {
+    const o = this.otps.get(id);
+    if (o) {
+      o.attempts += 1;
+    }
+  }
+
+  async deleteByIdentifier(identifier: string): Promise<void> {
+    for (const [id, o] of this.otps.entries()) {
+      if (o.identifier === identifier) {
+        this.otps.delete(id);
+      }
+    }
+  }
+}
+
 export function createInMemoryAdapter(): DatabaseAdapter {
   return {
     users: new InMemoryUserRepository(),
@@ -402,5 +447,6 @@ export function createInMemoryAdapter(): DatabaseAdapter {
     invitations: new InMemoryInvitationRepository(),
     oauth: new InMemoryOAuthRepository(),
     twoFactor: new InMemoryTwoFactorRepository(),
+    otpCodes: new InMemoryOtpRepository(),
   };
 }

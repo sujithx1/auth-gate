@@ -36,3 +36,12 @@ export interface TwoFactorSecret {
   backupCodes: string[];
   createdAt: Date;
 }
+
+export interface OtpCode {
+  id: string;
+  identifier: string;
+  codeHash: string;
+  expiresAt: Date;
+  attempts: number;
+  createdAt: Date;
+}
