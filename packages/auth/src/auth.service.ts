@@ -3,6 +3,7 @@ import {
   UserRepository,
   VerificationTokenRepository,
   TwoFactorRepository,
+  OtpRepository,
 } from "@authgate/core";
 import {
   hashPassword,
@@ -19,7 +20,8 @@ export class AuthService {
   constructor(
     private readonly userRepo: UserRepository,
     private readonly tokenRepo: VerificationTokenRepository,
-    private readonly twoFactorRepo: TwoFactorRepository
+    private readonly twoFactorRepo: TwoFactorRepository,
+    private readonly otpRepo: OtpRepository
   ) {}
 
   /**
@@ -279,5 +281,71 @@ export class AuthService {
     });
 
     await this.tokenRepo.deleteByTokenAndType(token, "PASSWORD_RESET");
+  }
+
+  /**
+   * Generates a secure random numeric OTP code and hashes it for database storage.
+   */
+  async generateOtp(identifier: string, length: number = 6, expiresSeconds: number = 300): Promise<{ code: string }> {
+    const normalizedIdentifier = identifier.toLowerCase().trim();
+    
+    // Generate numeric code
+    let code = "";
+    for (let i = 0; i < length; i++) {
+      code += Math.floor(Math.random() * 10).toString();
+    }
+
+    const hashed = await hashPassword(code);
+    const expiresAt = new Date();
+    expiresAt.setSeconds(expiresAt.getSeconds() + expiresSeconds);
+
+    await this.otpRepo.create({
+      identifier: normalizedIdentifier,
+      codeHash: hashed,
+      expiresAt,
+      attempts: 0,
+    });
+
+    return { code };
+  }
+
+  /**
+   * Verifies an OTP code and logs in/registers the user.
+   */
+  async verifyOtp(identifier: string, code: string): Promise<User> {
+    const normalizedIdentifier = identifier.toLowerCase().trim();
+    const otp = await this.otpRepo.findActiveByIdentifier(normalizedIdentifier);
+
+    if (!otp) {
+      throw new ValidationError("OTP has expired or is invalid.");
+    }
+
+    if (otp.attempts >= 3) {
+      await this.otpRepo.deleteByIdentifier(normalizedIdentifier);
+      throw new ValidationError("Maximum verification attempts exceeded. Please request a new OTP.");
+    }
+
+    const isValid = await verifyPassword(code, otp.codeHash);
+    if (!isValid) {
+      await this.otpRepo.incrementAttempts(otp.id);
+      throw new ValidationError("Invalid verification code.");
+    }
+
+    // Success: Delete OTP
+    await this.otpRepo.deleteByIdentifier(normalizedIdentifier);
+
+    // Retrieve or register user
+    let user = await this.userRepo.findByEmail(normalizedIdentifier);
+    if (!user) {
+      // Auto-register user
+      const placeholderPasswordHash = await hashPassword(generateSecureToken(32));
+      user = await this.userRepo.create({
+        email: normalizedIdentifier,
+        passwordHash: placeholderPasswordHash,
+        isEmailVerified: true, // Verification succeeded via OTP
+      });
+    }
+
+    return user;
   }
 }

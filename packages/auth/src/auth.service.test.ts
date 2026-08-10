@@ -11,7 +11,8 @@ describe("AuthService", () => {
     authService = new AuthService(
       adapter.users,
       adapter.verificationTokens,
-      adapter.twoFactor
+      adapter.twoFactor,
+      adapter.otpCodes
     );
   });
 
@@ -79,5 +80,20 @@ describe("AuthService", () => {
     // Login with new password should succeed
     const user = await authService.login("test@example.com", "newpassword123");
     expect(user).toBeDefined();
+  });
+
+  it("should generate a random OTP numeric code and verify it successfully", async () => {
+    const email = "otp-user@example.com";
+    const { code } = await authService.generateOtp(email, 6, 60);
+
+    expect(code).toBeDefined();
+    expect(code.length).toBe(6);
+    expect(/^\d+$/.test(code)).toBe(true);
+
+    // Verify OTP and assert auto-registration
+    const user = await authService.verifyOtp(email, code);
+    expect(user).toBeDefined();
+    expect(user.email).toBe(email);
+    expect(user.isEmailVerified).toBe(true);
   });
 });
