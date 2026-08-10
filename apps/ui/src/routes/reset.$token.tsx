@@ -1,22 +1,15 @@
 import React from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ShieldCheck } from "lucide-react";
-import VerifyEmail from "../pages/VerifyEmail";
+import ResetPassword from "../pages/ResetPassword";
 
-export interface VerifySearchParams {
-  token?: string;
-}
-
-export const Route = createFileRoute("/verify")({
-  validateSearch: (search: Record<string, unknown>): VerifySearchParams => ({
-    token: (search.token as string) || undefined,
-  }),
-  component: VerifyComponent,
+export const Route = createFileRoute("/reset/$token")({
+  component: ResetComponent,
 });
 
-function VerifyComponent() {
+function ResetComponent() {
   const navigate = useNavigate();
-  const { token } = Route.useSearch();
+  const { token } = Route.useParams();
   const [error, setError] = React.useState<string | null>(null);
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden px-4 py-12">
@@ -26,7 +19,7 @@ function VerifyComponent() {
           <h1 className="text-3xl font-bold tracking-tight">Auth<span className="text-muted-foreground font-medium">Gate</span></h1>
         </div>
         {error && <div className="p-3 bg-destructive/15 text-destructive border border-destructive/20 rounded-lg text-xs">{error}</div>}
-        <VerifyEmail
+        <ResetPassword
           initialToken={token}
           onSuccess={() => navigate({ to: "/login" })}
           onNavigate={() => navigate({ to: "/login" })}

@@ -20,7 +20,7 @@ function RegisterComponent() {
         {error && <div className="p-3 bg-destructive/15 text-destructive border border-destructive/20 rounded-lg text-xs">{error}</div>}
         <Register
           onSuccess={(token) => {
-            navigate({ to: "/verify", search: { token } });
+            navigate({ to: `/verify/${token}` });
           }}
           onNavigate={() => navigate({ to: "/login" })}
           onError={setError}
