@@ -23,6 +23,8 @@ import {
   TwoFactorRepository,
   OtpCode,
   OtpRepository,
+  SocialAccount,
+  SocialAccountRepository,
 } from "@authgate/core";
 import * as schema from "./schema";
 
@@ -468,5 +470,35 @@ export class DrizzleOtpRepository implements OtpRepository {
 
   async deleteByIdentifier(identifier: string): Promise<void> {
     await this.db.delete(schema.otpCodes).where(eq(schema.otpCodes.identifier, identifier));
+  }
+}
+
+export class DrizzleSocialAccountRepository implements SocialAccountRepository {
+  constructor(private readonly db: any) {}
+
+  async findByProvider(provider: string, providerUserId: string): Promise<SocialAccount | null> {
+    const results = await this.db.select()
+      .from(schema.socialAccounts)
+      .where(and(
+        eq(schema.socialAccounts.provider, provider),
+        eq(schema.socialAccounts.providerUserId, providerUserId)
+      ))
+      .limit(1);
+    return results[0] || null;
+  }
+
+  async findByUserId(userId: string): Promise<SocialAccount[]> {
+    return this.db.select()
+      .from(schema.socialAccounts)
+      .where(eq(schema.socialAccounts.userId, userId));
+  }
+
+  async create(account: Omit<SocialAccount, "id" | "createdAt">): Promise<SocialAccount> {
+    const results = await this.db.insert(schema.socialAccounts).values(account).returning();
+    return results[0];
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.db.delete(schema.socialAccounts).where(eq(schema.socialAccounts.id, id));
   }
 }
