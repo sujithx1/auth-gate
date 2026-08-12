@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CodeBlock } from "./CodeBlock";
 
 export function SetupDoc() {
   const [codeTab, setCodeTab] = useState<"bun" | "node" | "deno">("bun");
@@ -9,9 +10,7 @@ export function SetupDoc() {
       <p className="text-sm text-muted-foreground">
         Install the client SDK inside your application workspace to initialize your connection context:
       </p>
-      <pre className="p-3 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-primary font-mono">
-        npm install @sujithx/authgate
-      </pre>
+      <CodeBlock code="npm install @sujithx/authgate" className="text-primary" />
 
       {/* Runtime Tab Selector */}
       <div className="flex gap-2 border-b border-border pb-2 mt-6">
@@ -30,8 +29,7 @@ export function SetupDoc() {
 
       <div className="mt-4">
         {codeTab === "bun" && (
-          <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
-{`import { AuthGateClient } from "@sujithx/authgate";
+          <CodeBlock code={`import { AuthGateClient } from "@sujithx/authgate";
 
 const auth = new AuthGateClient({
   baseUrl: "http://localhost:3005",
@@ -45,13 +43,11 @@ Bun.serve({
     const session = await auth.me();
     return new Response(\`Logged in as: \${session.data.user.email}\`);
   }
-});`}
-          </pre>
+});`} />
         )}
 
         {codeTab === "node" && (
-          <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
-{`const { AuthGateClient } = require("@sujithx/authgate");
+          <CodeBlock code={`const { AuthGateClient } = require("@sujithx/authgate");
 const express = require("express");
 
 const auth = new AuthGateClient({
@@ -70,13 +66,11 @@ app.get("/me", async (req, res) => {
   }
 });
 
-app.listen(3000);`}
-          </pre>
+app.listen(3000);`} />
         )}
 
         {codeTab === "deno" && (
-          <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
-{`import { AuthGateClient } from "npm:@sujithx/authgate";
+          <CodeBlock code={`import { AuthGateClient } from "npm:@sujithx/authgate";
 import { Application } from "https://deno.land/x/oak/mod.ts";
 
 const auth = new AuthGateClient({
@@ -91,8 +85,7 @@ app.use(async (ctx) => {
   ctx.response.body = \`Hello from Deno, \${user.data.user.email}!\`;
 });
 
-await app.listen({ port: 3000 });`}
-          </pre>
+await app.listen({ port: 3000 });`} />
         )}
       </div>
     </div>

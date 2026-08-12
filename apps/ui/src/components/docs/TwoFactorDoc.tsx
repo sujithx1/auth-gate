@@ -1,3 +1,5 @@
+import { CodeBlock } from "./CodeBlock";
+
 export function TwoFactorDoc() {
   return (
     <div className="space-y-4">
@@ -5,8 +7,7 @@ export function TwoFactorDoc() {
       <p className="text-sm text-muted-foreground">
         Let users manage Google Authenticator secrets and copy backup recovery keys:
       </p>
-      <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
-{`// 1. Request authenticator registration
+      <CodeBlock code={`// 1. Request authenticator registration
 const { secret, uri } = await auth.enableTwoFactor();
 
 // 2. Validate first generated passcode to confirm and activate 2FA
@@ -14,8 +15,7 @@ const { backupCodes } = await auth.verifyTwoFactor("123456");
 console.log("Save backup keys securely:", backupCodes);
 
 // 3. Disable 2FA
-await auth.disableTwoFactor("123456");`}
-      </pre>
+await auth.disableTwoFactor("123456");`} />
     </div>
   );
 }

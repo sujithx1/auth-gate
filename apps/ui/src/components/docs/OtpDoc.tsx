@@ -1,3 +1,5 @@
+import { CodeBlock } from "./CodeBlock";
+
 export function OtpDoc() {
   return (
     <div className="space-y-4">
@@ -5,8 +7,7 @@ export function OtpDoc() {
       <p className="text-sm text-muted-foreground">
         Generate random numeric OTP codes on AuthGate and deliver them using your own carrier:
       </p>
-      <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
-{`// 1. Generate code (returns plain text OTP code to your server)
+      <CodeBlock code={`// 1. Generate code (returns plain text OTP code to your server)
 const { code } = await auth.generateOtp({
   identifier: "user@example.com",
   length: 6,
@@ -19,8 +20,7 @@ const { code } = await auth.generateOtp({
 const session = await auth.verifyOtp({
   identifier: "user@example.com",
   code: "128372"
-});`}
-      </pre>
+});`} />
     </div>
   );
 }
