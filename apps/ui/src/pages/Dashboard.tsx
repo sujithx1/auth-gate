@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User as UserIcon, LogOut, Building2, Laptop, ShieldCheck, Mail, Calendar, UserCheck, Shield, RefreshCw, QrCode } from "lucide-react";
+import { User as UserIcon, LogOut, Building2, Laptop, ShieldCheck, Mail, Calendar, UserCheck, Shield, RefreshCw, QrCode, BookOpen, Terminal, Cpu } from "lucide-react";
 import { api } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
@@ -28,6 +28,9 @@ export default function Dashboard({ user, onLogout, onNavigateOrgs, onNavigateCl
   const [code, setCode] = useState("");
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<"dashboard" | "docs">("dashboard");
+  const [docSection, setDocSection] = useState<string>("intro");
+  const [codeTab, setCodeTab] = useState<"bun" | "node" | "deno">("bun");
 
   const fetchSessions = async () => {
     try {
@@ -112,9 +115,33 @@ export default function Dashboard({ user, onLogout, onNavigateOrgs, onNavigateCl
     <div className="w-full max-w-6xl mx-auto space-y-8 px-4 py-8">
       {/* Header section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-border">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Developer Portal</h1>
-          <p className="text-muted-foreground text-sm">Welcome back, {user.email}</p>
+        <div className="flex flex-col md:flex-row md:items-center gap-6">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight">Developer Portal</h1>
+            <p className="text-muted-foreground text-sm">Welcome back, {user.email}</p>
+          </div>
+          <div className="flex items-center gap-2 bg-secondary/50 p-1 rounded-lg border border-border mt-2 md:mt-0">
+            <button
+              onClick={() => setActiveTab("dashboard")}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                activeTab === "dashboard"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => setActiveTab("docs")}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                activeTab === "docs"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Developer API Docs
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={handleLogout} className="border-border">
@@ -124,277 +151,525 @@ export default function Dashboard({ user, onLogout, onNavigateOrgs, onNavigateCl
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <Card className="bg-card/50 border-border">
-          <CardContent className="pt-6 flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">Verify Status</span>
-              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
-                user.isEmailVerified
-                  ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                  : "bg-amber-500/10 text-amber-500 border border-amber-500/20"
-              }`}>
-                {user.isEmailVerified ? "Verified Account" : "Pending Verification"}
-              </span>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-              <UserCheck className="w-5 h-5" />
-            </div>
-          </CardContent>
-        </Card>
+      {activeTab === "docs" ? (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* Left Sidebar */}
+          <div className="md:col-span-1 space-y-2">
+            {[
+              { id: "intro", title: "Introduction", icon: BookOpen },
+              { id: "setup", title: "Getting Started", icon: Terminal },
+              { id: "credentials", title: "Credentials Login", icon: ShieldCheck },
+              { id: "2fa", title: "Multi-Factor Auth (2FA)", icon: Shield },
+              { id: "otp", title: "Decoupled OTP Mediator", icon: Cpu },
+              { id: "social", title: "Social Logins", icon: Laptop },
+            ].map((section) => {
+              const Icon = section.icon;
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => setDocSection(section.id)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm font-semibold border transition-all ${
+                    docSection === section.id
+                      ? "bg-primary/10 border-primary/20 text-primary shadow-sm"
+                      : "bg-card/50 border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{section.title}</span>
+                </button>
+              );
+            })}
+          </div>
 
-        <Card className="bg-card/50 border-border cursor-pointer hover:border-primary/50 transition-colors" onClick={onNavigateOrgs}>
-          <CardContent className="pt-6 flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">Organizations</span>
-              <span className="text-lg font-bold">Manage Workspaces</span>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-              <Building2 className="w-5 h-5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/50 border-border cursor-pointer hover:border-primary/50 transition-colors" onClick={onNavigateClients}>
-          <CardContent className="pt-6 flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">Developer Clients</span>
-              <span className="text-lg font-bold">Register OAuth Apps</span>
-            </div>
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-              <Laptop className="w-5 h-5" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Grid layout */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-1 space-y-6">
-          {/* Profile Card details */}
-          <Card className="border-border">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <UserIcon className="w-4 h-4 text-primary" />
-                <CardTitle className="text-lg">Identity Details</CardTitle>
-              </div>
-              <CardDescription>Your account developer profile</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-1">
-                <span className="text-xs text-muted-foreground block font-medium">Developer ID</span>
-                <code className="text-xs block bg-muted p-2 rounded border border-border select-all font-mono break-all">
-                  {user.id}
-                </code>
-              </div>
-              <div className="space-y-1">
-                <span className="text-xs text-muted-foreground block font-medium">Email Address</span>
-                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <Mail className="w-4 h-4 text-muted-foreground" />
-                  <span>{user.email}</span>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <span className="text-xs text-muted-foreground block font-medium">Joined On</span>
-                <div className="flex items-center gap-2 text-sm text-foreground">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span>{new Date(user.createdAt).toLocaleDateString()}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Security (2FA) Setup Card */}
-          <Card className="border-border">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-primary" />
-                <CardTitle className="text-lg">Two-Factor Auth (2FA)</CardTitle>
-              </div>
-              <CardDescription>Manage multi-factor verification credentials</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {is2faActive ? (
-                <div className="space-y-4">
-                  <div className="p-3 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-lg text-xs font-semibold">
-                    ✓ Two-Factor Authentication is active.
+          {/* Right Main Panel */}
+          <div className="md:col-span-3 space-y-6">
+            <Card className="border-border">
+              <CardContent className="pt-6 space-y-6">
+                {docSection === "intro" && (
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-bold">Introduction to AuthGate</h2>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      AuthGate is a high-performance, developer-centric authentication engine designed to act as a secure mediator between client applications and backend user records. It implements strict type safety, PKCE-guarded OAuth 2.1 authentication protocol, multi-tenant organizations, and decoupled transport factors.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                      <div className="p-4 bg-muted/50 rounded-lg border border-border space-y-2">
+                        <h4 className="font-semibold text-sm">Decoupled Mediator Model</h4>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          AuthGate generates and hashes codes, leaving transport carriers (Twilio, SendGrid, push alerts) to the choice of the developer.
+                        </p>
+                      </div>
+                      <div className="p-4 bg-muted/50 rounded-lg border border-border space-y-2">
+                        <h4 className="font-semibold text-sm">Strict Security Gates</h4>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Equipped with local RFC 6238 TOTP engine, secure password hashing, and active device revocation options.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  {backupCodes.length > 0 && (
+                )}
+
+                {docSection === "setup" && (
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-bold">Getting Started</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Install the client SDK inside your application workspace to initialize your connection context:
+                    </p>
+                    <pre className="p-3 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-primary font-mono">
+                      npm install @sujithx/authgate
+                    </pre>
+
+                    {/* Runtime Tab Selector */}
+                    <div className="flex gap-2 border-b border-border pb-2 mt-6">
+                      {(["bun", "node", "deno"] as const).map((r) => (
+                        <button
+                          key={r}
+                          onClick={() => setCodeTab(r)}
+                          className={`px-3 py-1 text-xs font-semibold rounded ${
+                            codeTab === r ? "bg-primary/10 text-primary" : "text-muted-foreground"
+                          }`}
+                        >
+                          {r === "bun" ? "Bun" : r === "node" ? "Node.js (Express)" : "Deno (Oak)"}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="mt-4">
+                      {codeTab === "bun" && (
+                        <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
+{`import { AuthGateClient } from "@sujithx/authgate";
+
+const auth = new AuthGateClient({
+  baseUrl: "http://localhost:3005",
+  credentials: "include",
+});
+
+// Native Bun HTTP listener
+Bun.serve({
+  port: 3000,
+  async fetch(req) {
+    const session = await auth.me();
+    return new Response(\`Logged in as: \${session.data.user.email}\`);
+  }
+});`}
+                        </pre>
+                      )}
+
+                      {codeTab === "node" && (
+                        <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
+{`const { AuthGateClient } = require("@sujithx/authgate");
+const express = require("express");
+
+const auth = new AuthGateClient({
+  baseUrl: "http://localhost:3005",
+  credentials: "include",
+});
+
+const app = express();
+
+app.get("/me", async (req, res) => {
+  try {
+    const user = await auth.me();
+    res.json({ email: user.data.user.email });
+  } catch (e) {
+    res.status(401).json({ error: "Unauthorized" });
+  }
+});
+
+app.listen(3000);`}
+                        </pre>
+                      )}
+
+                      {codeTab === "deno" && (
+                        <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
+{`import { AuthGateClient } from "npm:@sujithx/authgate";
+import { Application } from "https://deno.land/x/oak/mod.ts";
+
+const auth = new AuthGateClient({
+  baseUrl: "http://localhost:3005",
+  credentials: "include",
+});
+
+const app = new Application();
+
+app.use(async (ctx) => {
+  const user = await auth.me();
+  ctx.response.body = \`Hello from Deno, \${user.data.user.email}!\`;
+});
+
+await app.listen({ port: 3000 });`}
+                        </pre>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {docSection === "credentials" && (
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-bold">Email & Password Login</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Verify email and password credentials. If the user has 2FA active, handle the `TWO_FACTOR_REQUIRED` callback:
+                    </p>
+                    <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
+{`try {
+  const session = await auth.login("user@example.com", "secure-password");
+  console.log("Logged in user:", session.data.user.email);
+} catch (error) {
+  if (error.code === "TWO_FACTOR_REQUIRED") {
+    // Redirect to your custom OTP/2FA passcode entry screen
+    console.log("Passcode required for User ID:", error.details.userId);
+  }
+}`}
+                    </pre>
+                  </div>
+                )}
+
+                {docSection === "2fa" && (
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-bold">Multi-Factor Authentication (2FA)</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Let users manage Google Authenticator secrets and copy backup recovery keys:
+                    </p>
+                    <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
+{`// 1. Request authenticator registration
+const { secret, uri } = await auth.enableTwoFactor();
+
+// 2. Validate first generated passcode to confirm and activate 2FA
+const { backupCodes } = await auth.verifyTwoFactor("123456");
+console.log("Save backup keys securely:", backupCodes);
+
+// 3. Disable 2FA
+await auth.disableTwoFactor("123456");`}
+                    </pre>
+                  </div>
+                )}
+
+                {docSection === "otp" && (
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-bold">Decoupled OTP Mediator</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Generate random numeric OTP codes on AuthGate and deliver them using your own carrier:
+                    </p>
+                    <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
+{`// 1. Generate code (returns plain text OTP code to your server)
+const { code } = await auth.generateOtp({
+  identifier: "user@example.com",
+  length: 6,
+  expiresSeconds: 300
+});
+
+// Deliver the 'code' variable using Twilio, SMTP, or SendGrid here...
+
+// 2. Verify incoming user code to establish session
+const session = await auth.verifyOtp({
+  identifier: "user@example.com",
+  code: "128372"
+});`}
+                    </pre>
+                  </div>
+                )}
+
+                {docSection === "social" && (
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-bold">Social Sign-In Redirections</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Initiate federated auth by redirecting the browser window directly to the AuthGate provider endpoints:
+                    </p>
+                    <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
+{`// Redirect browser to trigger social consent redirects
+window.location.href = "http://localhost:3005/api/auth/social/google";
+window.location.href = "http://localhost:3005/api/auth/social/github";`}
+                    </pre>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Stats row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <Card className="bg-card/50 border-border">
+              <CardContent className="pt-6 flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">Verify Status</span>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+                    user.isEmailVerified
+                      ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                      : "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                  }`}>
+                    {user.isEmailVerified ? "Verified Account" : "Pending Verification"}
+                  </span>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card/50 border-border cursor-pointer hover:border-primary/50 transition-colors" onClick={onNavigateOrgs}>
+              <CardContent className="pt-6 flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">Organizations</span>
+                  <span className="text-lg font-bold">Manage Workspaces</span>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                  <Building2 className="w-5 h-5" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card/50 border-border cursor-pointer hover:border-primary/50 transition-colors" onClick={onNavigateClients}>
+              <CardContent className="pt-6 flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">Developer Clients</span>
+                  <span className="text-lg font-bold">Register OAuth Apps</span>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                  <Laptop className="w-5 h-5" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Grid layout */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="md:col-span-1 space-y-6">
+              {/* Profile Card details */}
+              <Card className="border-border">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <UserIcon className="w-4 h-4 text-primary" />
+                    <CardTitle className="text-lg">Identity Details</CardTitle>
+                  </div>
+                  <CardDescription>Personal verification status</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-3 text-sm">
+                    <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span className="truncate">{user.email}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* MFA Settings Card */}
+              <Card className="border-border">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-primary" />
+                    <CardTitle className="text-lg">Two-Factor Auth</CardTitle>
+                  </div>
+                  <CardDescription>Secure authenticator configurations</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {is2faActive ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 p-3 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-lg text-xs font-semibold">
+                        <ShieldCheck className="w-4 h-4" />
+                        TOTP Two-Factor is Active
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="disable-2fa-code">Enter Code to Disable</Label>
+                        <Input
+                          id="disable-2fa-code"
+                          type="text"
+                          maxLength={6}
+                          placeholder="123456"
+                          value={code}
+                          onChange={(e) => setCode(e.target.value)}
+                        />
+                        <Button
+                          onClick={handleDisable2FA}
+                          variant="destructive"
+                          className="w-full text-xs"
+                          disabled={loading || !code}
+                        >
+                          {loading && <RefreshCw className="w-4 h-4 animate-spin mr-2" />}
+                          Disable 2FA
+                        </Button>
+                      </div>
+                    </div>
+                  ) : mfaSecret ? (
+                    <div className="space-y-4">
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Scan the QR code below or copy the manual key to your authenticator app (Google Authenticator, Duo, etc.).
+                      </p>
+                      {mfaUri && (
+                        <div className="flex justify-center p-3 bg-white rounded-lg border border-border w-[170px] mx-auto">
+                          <img
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+                              mfaUri
+                            )}`}
+                            alt="MFA QR Code"
+                            className="w-[150px] h-[150px]"
+                          />
+                        </div>
+                      )}
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Manual Setup Key</Label>
+                        <pre className="p-2 bg-muted rounded border border-border text-xs break-all select-all font-mono">
+                          {mfaSecret}
+                        </pre>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="verify-2fa-code">Verification Code</Label>
+                        <Input
+                          id="verify-2fa-code"
+                          type="text"
+                          maxLength={6}
+                          placeholder="123456"
+                          value={code}
+                          onChange={(e) => setCode(e.target.value)}
+                        />
+                        <Button
+                          onClick={handleVerify2FA}
+                          className="w-full text-xs"
+                          disabled={loading || !code}
+                        >
+                          {loading && <RefreshCw className="w-4 h-4 animate-spin mr-2" />}
+                          Verify & Activate 2FA
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
                     <div className="space-y-2">
-                      <Label className="text-xs text-amber-500 font-bold block font-medium">✓ Keep your Backup Recovery Codes safe:</Label>
-                      <div className="grid grid-cols-2 gap-2 bg-muted p-3 rounded-lg border border-border font-mono text-xs select-all">
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Protect your developer account by requiring a temporary 6-digit verification code from your authenticator application at login.
+                      </p>
+                      <Button onClick={handleEnable2FA} className="w-full" disabled={loading}>
+                        {loading && <RefreshCw className="w-4 h-4 animate-spin mr-2" />}
+                        <QrCode className="w-4 h-4 mr-2" />
+                        Setup Authenticator 2FA
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Render recovery keys */}
+                  {backupCodes && backupCodes.length > 0 && (
+                    <div className="mt-6 p-4 bg-muted/50 rounded-lg border border-border space-y-3">
+                      <h4 className="text-xs font-bold text-foreground">Backup Recovery Codes</h4>
+                      <p className="text-[10px] text-muted-foreground leading-normal">
+                        Store these recovery codes securely. Each code can be used exactly once if you lose access to your device.
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 text-xs font-mono text-center">
                         {backupCodes.map((c, i) => (
-                          <div key={i}>{c}</div>
+                          <div key={i} className="p-1 bg-background border border-border rounded text-[11px] select-all">
+                            {c}
+                          </div>
                         ))}
                       </div>
                     </div>
                   )}
-                  <div className="space-y-2">
-                    <Label htmlFor="mfa-disable-code">Enter Authenticator Code to Disable</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="mfa-disable-code"
-                        placeholder="123456"
-                        value={code}
-                        onChange={(e) => setCode(e.target.value)}
-                        maxLength={6}
-                      />
-                      <Button onClick={handleDisable2FA} variant="destructive" disabled={loading}>
-                        {loading && <RefreshCw className="w-4 h-4 animate-spin mr-2" />}
-                        Disable
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ) : mfaSecret ? (
-                <div className="space-y-4 text-center">
-                  <div className="flex justify-center bg-white p-2 rounded-lg inline-block mx-auto border border-border">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(mfaUri || "")}`}
-                      alt="TOTP QR Code"
-                      className="w-36 h-36"
-                    />
-                  </div>
-                  <div className="text-left space-y-1">
-                    <span className="text-xs text-muted-foreground block font-medium">Alternative Manual Key</span>
-                    <code className="text-xs block bg-muted p-2 rounded border border-border select-all font-mono break-all">
-                      {mfaSecret}
-                    </code>
-                  </div>
-                  <div className="text-left space-y-2">
-                    <Label htmlFor="mfa-setup-code">Confirm Verification Code</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="mfa-setup-code"
-                        placeholder="123456"
-                        value={code}
-                        onChange={(e) => setCode(e.target.value)}
-                        maxLength={6}
-                      />
-                      <Button onClick={handleVerify2FA} disabled={loading}>
-                        {loading && <RefreshCw className="w-4 h-4 animate-spin mr-2" />}
-                        Verify
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Protect your developer account by requiring a temporary 6-digit verification code from your authenticator application at login.
-                  </p>
-                  <Button onClick={handleEnable2FA} className="w-full" disabled={loading}>
-                    {loading && <RefreshCw className="w-4 h-4 animate-spin mr-2" />}
-                    <QrCode className="w-4 h-4 mr-2" />
-                    Setup Authenticator 2FA
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                </CardContent>
+              </Card>
+            </div>
 
-        <div className="md:col-span-2 space-y-6">
-          {/* Quick Setup Guide */}
-          <Card className="border-border">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-primary" />
-                <CardTitle className="text-lg">Active Integration Guides</CardTitle>
-              </div>
-              <CardDescription>Integrate AuthGate in your local server app</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
-                    1
+            <div className="md:col-span-2 space-y-6">
+              {/* Quick Setup Guide */}
+              <Card className="border-border">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-primary" />
+                    <CardTitle className="text-lg">Active Integration Guides</CardTitle>
                   </div>
-                  <div className="space-y-1">
-                    <h4 className="font-semibold text-sm">Configure Client Adapter</h4>
-                    <p className="text-muted-foreground text-xs leading-relaxed">
-                      Set up your backend connection with your database adapter. We support Drizzle adapters natively out of the box.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
-                    2
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="font-semibold text-sm">Define Roles and Custom Permissions</h4>
-                    <p className="text-muted-foreground text-xs leading-relaxed">
-                      Head to Organizations tab to invite team members and set roles (`ADMIN`, `MEMBER`). Set up route middleware authorization checks.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
-                    3
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="font-semibold text-sm">Register Client Credentials</h4>
-                    <p className="text-muted-foreground text-xs leading-relaxed">
-                      Create client credentials under Developer Clients to support PKCE-guarded authorization exchanges.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Active Sessions Card */}
-          <Card className="border-border">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <UserCheck className="w-5 h-5 text-primary" />
-                <CardTitle className="text-lg">Logged-in Sessions</CardTitle>
-              </div>
-              <CardDescription>Revoke access tokens and sign out of other active browsers</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {sessions.length === 0 ? (
-                <div className="text-xs text-muted-foreground">No active sessions found.</div>
-              ) : (
-                <div className="space-y-4">
-                  {sessions.map((s) => (
-                    <div key={s.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-card/50 rounded-lg border border-border gap-4">
+                  <CardDescription>Integrate AuthGate in your local server app</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                        1
+                      </div>
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-foreground break-all">{s.userAgent}</span>
-                          {s.isCurrent && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
-                              This Device
-                            </span>
+                        <h4 className="font-semibold text-sm">Configure Client Adapter</h4>
+                        <p className="text-muted-foreground text-xs leading-relaxed">
+                          Set up your backend connection with your database adapter. We support Drizzle adapters natively out of the box.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                        2
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="font-semibold text-sm">Define Roles and Custom Permissions</h4>
+                        <p className="text-muted-foreground text-xs leading-relaxed">
+                          Head to Organizations tab to invite team members and set roles (`ADMIN`, `MEMBER`). Set up route middleware authorization checks.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                        3
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="font-semibold text-sm">Register Client Credentials</h4>
+                        <p className="text-muted-foreground text-xs leading-relaxed">
+                          Create client credentials under Developer Clients to support PKCE-guarded authorization exchanges.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Active Sessions Card */}
+              <Card className="border-border">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="w-5 h-5 text-primary" />
+                    <CardTitle className="text-lg">Logged-in Sessions</CardTitle>
+                  </div>
+                  <CardDescription>Revoke access tokens and sign out of other active browsers</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {sessions.length === 0 ? (
+                    <div className="text-xs text-muted-foreground">No active sessions found.</div>
+                  ) : (
+                    <div className="space-y-4">
+                      {sessions.map((s) => (
+                        <div key={s.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-card/50 rounded-lg border border-border gap-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-foreground break-all">{s.userAgent}</span>
+                              {s.isCurrent && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+                                  This Device
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground flex gap-3">
+                              <span>IP: {s.ipAddress}</span>
+                              <span>•</span>
+                              <span>Expires: {new Date(s.expiresAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          {!s.isCurrent && (
+                            <Button
+                              onClick={() => handleRevokeSession(s.id)}
+                              variant="outline"
+                              size="sm"
+                              className="border-destructive/20 text-destructive hover:bg-destructive/10"
+                            >
+                              Revoke Access
+                            </Button>
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground flex gap-3">
-                          <span>IP: {s.ipAddress}</span>
-                          <span>•</span>
-                          <span>Expires: {new Date(s.expiresAt).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                      {!s.isCurrent && (
-                        <Button
-                          onClick={() => handleRevokeSession(s.id)}
-                          variant="outline"
-                          size="sm"
-                          className="border-destructive/20 text-destructive hover:bg-destructive/10"
-                        >
-                          Revoke Access
-                        </Button>
-                      )}
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
