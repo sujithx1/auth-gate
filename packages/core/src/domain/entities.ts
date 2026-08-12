@@ -45,3 +45,11 @@ export interface OtpCode {
   attempts: number;
   createdAt: Date;
 }
+
+export interface SocialAccount {
+  id: string;
+  userId: string;
+  provider: string;
+  providerUserId: string;
+  createdAt: Date;
+}

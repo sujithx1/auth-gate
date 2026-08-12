@@ -5,6 +5,7 @@ import {
   VerificationTokenType,
   TwoFactorSecret,
   OtpCode,
+  SocialAccount,
 } from "../domain/entities";
 
 import {
@@ -13,6 +14,7 @@ import {
   VerificationTokenRepository,
   TwoFactorRepository,
   OtpRepository,
+  SocialAccountRepository,
   DatabaseAdapter,
 } from "../domain/repositories";
 
@@ -452,6 +454,36 @@ export class InMemoryOtpRepository implements OtpRepository {
   }
 }
 
+export class InMemorySocialAccountRepository implements SocialAccountRepository {
+  public accounts: Map<string, SocialAccount> = new Map();
+
+  async findByProvider(provider: string, providerUserId: string): Promise<SocialAccount | null> {
+    for (const a of this.accounts.values()) {
+      if (a.provider === provider && a.providerUserId === providerUserId) return a;
+    }
+    return null;
+  }
+
+  async findByUserId(userId: string): Promise<SocialAccount[]> {
+    const list: SocialAccount[] = [];
+    for (const a of this.accounts.values()) {
+      if (a.userId === userId) list.push(a);
+    }
+    return list;
+  }
+
+  async create(account: Omit<SocialAccount, "id" | "createdAt">): Promise<SocialAccount> {
+    const id = crypto.randomUUID();
+    const created = { ...account, id, createdAt: new Date() };
+    this.accounts.set(id, created);
+    return created;
+  }
+
+  async delete(id: string): Promise<void> {
+    this.accounts.delete(id);
+  }
+}
+
 export function createInMemoryAdapter(): DatabaseAdapter {
   return {
     users: new InMemoryUserRepository(),
@@ -463,5 +495,6 @@ export function createInMemoryAdapter(): DatabaseAdapter {
     oauth: new InMemoryOAuthRepository(),
     twoFactor: new InMemoryTwoFactorRepository(),
     otpCodes: new InMemoryOtpRepository(),
+    socialAccounts: new InMemorySocialAccountRepository(),
   };
 }
