@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { ShieldCheck, Sun, Moon, Laptop, Key, Building2, ChevronRight, Copy, Check } from "lucide-react";
+import { ShieldCheck, Sun, Moon, Laptop, Key, Building2, ChevronRight, Copy, Check, BookOpen } from "lucide-react";
 import { Button } from "../components/ui/button";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 interface LandingProps {
   onGoToConsole: () => void;
@@ -13,6 +14,7 @@ export default function Landing({ onGoToConsole }: LandingProps) {
   });
   const [activeTab, setActiveTab] = useState<"install" | "client" | "usage">("install");
   const [copiedText, setCopiedText] = useState(false);
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     const root = window.document.documentElement;
@@ -63,6 +65,10 @@ console.log("Welcome back", data.user.email);`
           </div>
 
           <div className="flex items-center gap-4">
+            <Link to="/docs" className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors hidden md:flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              Docs
+            </Link>
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
@@ -96,7 +102,7 @@ console.log("Welcome back", data.user.email);`
             Launch Console <ChevronRight className="w-4 h-4 ml-2" />
           </Button>
           <Button size="lg" variant="outline" onClick={() => {
-            document.getElementById("docs-section")?.scrollIntoView({ behavior: "smooth" });
+            navigate({ to: "/docs" });
           }} className="px-8 border-border">
             View Docs
           </Button>
