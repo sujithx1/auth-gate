@@ -32,7 +32,8 @@ const authService = new AuthService(
   authGate.database.users,
   authGate.database.verificationTokens,
   authGate.database.twoFactor,
-  authGate.database.otpCodes
+  authGate.database.otpCodes,
+  authGate.database.socialAccounts
 );
 const sessionService = new SessionService(authGate.database.sessions);
 
