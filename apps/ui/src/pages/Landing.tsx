@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { ShieldCheck, Laptop, Key, Building2, Server, Shield, Cpu, Code, Sun, Moon } from "lucide-react";
+import { ShieldCheck, Laptop, Key, Building2, Server, Shield, Cpu, Code } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { CodeBlock } from "../components/docs/CodeBlock";
 
 interface LandingProps {
   onGoToConsole: () => void;
@@ -9,27 +9,6 @@ interface LandingProps {
 
 export default function Landing({ onGoToConsole }: LandingProps) {
   const navigate = useNavigate();
-  const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem("authgate-theme");
-    return saved ? saved === "dark" : true;
-  });
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    if (isDark) {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-  }, [isDark]);
-
-  const toggleTheme = () => {
-    setIsDark((prev) => {
-      const next = !prev;
-      localStorage.setItem("authgate-theme", next ? "dark" : "light");
-      return next;
-    });
-  };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen w-full bg-background text-foreground overflow-hidden font-sans transition-colors duration-200">
@@ -47,24 +26,18 @@ export default function Landing({ onGoToConsole }: LandingProps) {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background z-[-1] pointer-events-none" />
 
-        {/* Top: Logo & Theme Toggle */}
+        {/* Top: Logo */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 font-bold text-xl select-none">
             <ShieldCheck className="w-7 h-7 text-primary" />
             <span>Auth<span className="text-muted-foreground font-medium">Gate</span></span>
           </div>
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
-          >
-            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
         </div>
 
         {/* Middle: Hero Content */}
         <div className="space-y-8 my-16 md:my-0">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border text-xs font-semibold text-muted-foreground">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             Announcement | AuthGate Stage 3 Released &rarr;
           </div>
 
@@ -175,8 +148,10 @@ export default function Landing({ onGoToConsole }: LandingProps) {
                     <div className="h-12 bg-muted/40 border-b border-border flex items-center px-4">
                        <span className="text-xs text-muted-foreground font-mono flex items-center gap-2"><Code className="w-4 h-4" /> auth.ts</span>
                     </div>
-                    <div className="p-6 font-mono text-xs text-foreground overflow-x-auto leading-loose">
-<pre>{`import { AuthGateClient } from "@sujithx/authgate"
+                    <div className="p-4 bg-transparent border-0">
+                      <CodeBlock 
+                        className="bg-transparent border-0 text-foreground overflow-x-auto leading-loose"
+                        code={`import { AuthGateClient } from "@sujithx/authgate"
 
 export const auth = new AuthGateClient({
   baseUrl: "http://localhost:3005",
@@ -195,7 +170,7 @@ export const auth = new AuthGateClient({
     twoFactor(),
     otpMediator()
   ]
-})`}</pre>
+})`} />
                     </div>
                  </div>
 
