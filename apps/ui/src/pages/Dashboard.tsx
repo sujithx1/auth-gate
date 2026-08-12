@@ -5,6 +5,12 @@ import { Button } from "../components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { IntroDoc } from "../components/docs/IntroDoc";
+import { SetupDoc } from "../components/docs/SetupDoc";
+import { CredentialsDoc } from "../components/docs/CredentialsDoc";
+import { TwoFactorDoc } from "../components/docs/TwoFactorDoc";
+import { OtpDoc } from "../components/docs/OtpDoc";
+import { SocialDoc } from "../components/docs/SocialDoc";
 
 interface DashboardProps {
   user: {
@@ -30,7 +36,6 @@ export default function Dashboard({ user, onLogout, onNavigateOrgs, onNavigateCl
   const [sessions, setSessions] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"dashboard" | "docs">("dashboard");
   const [docSection, setDocSection] = useState<string>("intro");
-  const [codeTab, setCodeTab] = useState<"bun" | "node" | "deno">("bun");
 
   const fetchSessions = async () => {
     try {
@@ -185,202 +190,12 @@ export default function Dashboard({ user, onLogout, onNavigateOrgs, onNavigateCl
           <div className="md:col-span-3 space-y-6">
             <Card className="border-border">
               <CardContent className="pt-6 space-y-6">
-                {docSection === "intro" && (
-                  <div className="space-y-4">
-                    <h2 className="text-2xl font-bold">Introduction to AuthGate</h2>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      AuthGate is a high-performance, developer-centric authentication engine designed to act as a secure mediator between client applications and backend user records. It implements strict type safety, PKCE-guarded OAuth 2.1 authentication protocol, multi-tenant organizations, and decoupled transport factors.
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                      <div className="p-4 bg-muted/50 rounded-lg border border-border space-y-2">
-                        <h4 className="font-semibold text-sm">Decoupled Mediator Model</h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          AuthGate generates and hashes codes, leaving transport carriers (Twilio, SendGrid, push alerts) to the choice of the developer.
-                        </p>
-                      </div>
-                      <div className="p-4 bg-muted/50 rounded-lg border border-border space-y-2">
-                        <h4 className="font-semibold text-sm">Strict Security Gates</h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Equipped with local RFC 6238 TOTP engine, secure password hashing, and active device revocation options.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {docSection === "setup" && (
-                  <div className="space-y-4">
-                    <h2 className="text-2xl font-bold">Getting Started</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Install the client SDK inside your application workspace to initialize your connection context:
-                    </p>
-                    <pre className="p-3 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-primary font-mono">
-                      npm install @sujithx/authgate
-                    </pre>
-
-                    {/* Runtime Tab Selector */}
-                    <div className="flex gap-2 border-b border-border pb-2 mt-6">
-                      {(["bun", "node", "deno"] as const).map((r) => (
-                        <button
-                          key={r}
-                          onClick={() => setCodeTab(r)}
-                          className={`px-3 py-1 text-xs font-semibold rounded ${
-                            codeTab === r ? "bg-primary/10 text-primary" : "text-muted-foreground"
-                          }`}
-                        >
-                          {r === "bun" ? "Bun" : r === "node" ? "Node.js (Express)" : "Deno (Oak)"}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="mt-4">
-                      {codeTab === "bun" && (
-                        <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
-{`import { AuthGateClient } from "@sujithx/authgate";
-
-const auth = new AuthGateClient({
-  baseUrl: "http://localhost:3005",
-  credentials: "include",
-});
-
-// Native Bun HTTP listener
-Bun.serve({
-  port: 3000,
-  async fetch(req) {
-    const session = await auth.me();
-    return new Response(\`Logged in as: \${session.data.user.email}\`);
-  }
-});`}
-                        </pre>
-                      )}
-
-                      {codeTab === "node" && (
-                        <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
-{`const { AuthGateClient } = require("@sujithx/authgate");
-const express = require("express");
-
-const auth = new AuthGateClient({
-  baseUrl: "http://localhost:3005",
-  credentials: "include",
-});
-
-const app = express();
-
-app.get("/me", async (req, res) => {
-  try {
-    const user = await auth.me();
-    res.json({ email: user.data.user.email });
-  } catch (e) {
-    res.status(401).json({ error: "Unauthorized" });
-  }
-});
-
-app.listen(3000);`}
-                        </pre>
-                      )}
-
-                      {codeTab === "deno" && (
-                        <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
-{`import { AuthGateClient } from "npm:@sujithx/authgate";
-import { Application } from "https://deno.land/x/oak/mod.ts";
-
-const auth = new AuthGateClient({
-  baseUrl: "http://localhost:3005",
-  credentials: "include",
-});
-
-const app = new Application();
-
-app.use(async (ctx) => {
-  const user = await auth.me();
-  ctx.response.body = \`Hello from Deno, \${user.data.user.email}!\`;
-});
-
-await app.listen({ port: 3000 });`}
-                        </pre>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {docSection === "credentials" && (
-                  <div className="space-y-4">
-                    <h2 className="text-2xl font-bold">Email & Password Login</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Verify email and password credentials. If the user has 2FA active, handle the `TWO_FACTOR_REQUIRED` callback:
-                    </p>
-                    <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
-{`try {
-  const session = await auth.login("user@example.com", "secure-password");
-  console.log("Logged in user:", session.data.user.email);
-} catch (error) {
-  if (error.code === "TWO_FACTOR_REQUIRED") {
-    // Redirect to your custom OTP/2FA passcode entry screen
-    console.log("Passcode required for User ID:", error.details.userId);
-  }
-}`}
-                    </pre>
-                  </div>
-                )}
-
-                {docSection === "2fa" && (
-                  <div className="space-y-4">
-                    <h2 className="text-2xl font-bold">Multi-Factor Authentication (2FA)</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Let users manage Google Authenticator secrets and copy backup recovery keys:
-                    </p>
-                    <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
-{`// 1. Request authenticator registration
-const { secret, uri } = await auth.enableTwoFactor();
-
-// 2. Validate first generated passcode to confirm and activate 2FA
-const { backupCodes } = await auth.verifyTwoFactor("123456");
-console.log("Save backup keys securely:", backupCodes);
-
-// 3. Disable 2FA
-await auth.disableTwoFactor("123456");`}
-                    </pre>
-                  </div>
-                )}
-
-                {docSection === "otp" && (
-                  <div className="space-y-4">
-                    <h2 className="text-2xl font-bold">Decoupled OTP Mediator</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Generate random numeric OTP codes on AuthGate and deliver them using your own carrier:
-                    </p>
-                    <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
-{`// 1. Generate code (returns plain text OTP code to your server)
-const { code } = await auth.generateOtp({
-  identifier: "user@example.com",
-  length: 6,
-  expiresSeconds: 300
-});
-
-// Deliver the 'code' variable using Twilio, SMTP, or SendGrid here...
-
-// 2. Verify incoming user code to establish session
-const session = await auth.verifyOtp({
-  identifier: "user@example.com",
-  code: "128372"
-});`}
-                    </pre>
-                  </div>
-                )}
-
-                {docSection === "social" && (
-                  <div className="space-y-4">
-                    <h2 className="text-2xl font-bold">Social Sign-In Redirections</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Initiate federated auth by redirecting the browser window directly to the AuthGate provider endpoints:
-                    </p>
-                    <pre className="p-4 bg-muted rounded-lg border border-border text-xs overflow-x-auto text-foreground font-mono">
-{`// Redirect browser to trigger social consent redirects
-window.location.href = "http://localhost:3005/api/auth/social/google";
-window.location.href = "http://localhost:3005/api/auth/social/github";`}
-                    </pre>
-                  </div>
-                )}
+                {docSection === "intro" && <IntroDoc />}
+                {docSection === "setup" && <SetupDoc />}
+                {docSection === "credentials" && <CredentialsDoc />}
+                {docSection === "2fa" && <TwoFactorDoc />}
+                {docSection === "otp" && <OtpDoc />}
+                {docSection === "social" && <SocialDoc />}
               </CardContent>
             </Card>
           </div>
