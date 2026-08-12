@@ -4,6 +4,7 @@ import {
   VerificationTokenRepository,
   TwoFactorRepository,
   OtpRepository,
+  SocialAccountRepository,
 } from "@authgate/core";
 import {
   hashPassword,
@@ -21,7 +22,8 @@ export class AuthService {
     private readonly userRepo: UserRepository,
     private readonly tokenRepo: VerificationTokenRepository,
     private readonly twoFactorRepo: TwoFactorRepository,
-    private readonly otpRepo: OtpRepository
+    private readonly otpRepo: OtpRepository,
+    private readonly socialRepo: SocialAccountRepository
   ) {}
 
   /**
@@ -345,6 +347,41 @@ export class AuthService {
         isEmailVerified: true, // Verification succeeded via OTP
       });
     }
+
+    return user;
+  }
+
+  /**
+   * Log in or register a user utilizing federated social authentication.
+   */
+  async loginOrRegisterWithSocial(provider: string, providerUserId: string, email: string): Promise<User> {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // 1. Check if social account is already linked
+    const existingLink = await this.socialRepo.findByProvider(provider, providerUserId);
+    if (existingLink) {
+      const user = await this.userRepo.findById(existingLink.userId);
+      if (!user) throw new NotFoundError("Linked user account not found.");
+      return user;
+    }
+
+    // 2. Otherwise find or create the user profile by email
+    let user = await this.userRepo.findByEmail(normalizedEmail);
+    if (!user) {
+      const placeholderPasswordHash = await hashPassword(generateSecureToken(32));
+      user = await this.userRepo.create({
+        email: normalizedEmail,
+        passwordHash: placeholderPasswordHash,
+        isEmailVerified: true, // Social provider verified the email
+      });
+    }
+
+    // 3. Link social account
+    await this.socialRepo.create({
+      userId: user.id,
+      provider,
+      providerUserId,
+    });
 
     return user;
   }

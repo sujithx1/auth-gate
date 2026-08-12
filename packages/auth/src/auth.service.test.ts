@@ -12,7 +12,8 @@ describe("AuthService", () => {
       adapter.users,
       adapter.verificationTokens,
       adapter.twoFactor,
-      adapter.otpCodes
+      adapter.otpCodes,
+      adapter.socialAccounts
     );
   });
 
@@ -95,5 +96,27 @@ describe("AuthService", () => {
     expect(user).toBeDefined();
     expect(user.email).toBe(email);
     expect(user.isEmailVerified).toBe(true);
+  });
+
+  it("should successfully register and link social provider accounts", async () => {
+    const provider = "google";
+    const providerUserId = "google-id-123";
+    const email = "social@example.com";
+
+    // 1. Initial login should register and link the account
+    const user = await authService.loginOrRegisterWithSocial(provider, providerUserId, email);
+    expect(user).toBeDefined();
+    expect(user.email).toBe(email);
+    expect(user.isEmailVerified).toBe(true);
+
+    // Assert link exists in repo
+    const links = await adapter.socialAccounts.findByUserId(user.id);
+    expect(links.length).toBe(1);
+    expect(links[0].provider).toBe(provider);
+    expect(links[0].providerUserId).toBe(providerUserId);
+
+    // 2. Subsequent login should retrieve the same user
+    const retrieved = await authService.loginOrRegisterWithSocial(provider, providerUserId, email);
+    expect(retrieved.id).toBe(user.id);
   });
 });
