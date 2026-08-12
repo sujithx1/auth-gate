@@ -1,16 +1,11 @@
 import { useState, useEffect } from "react";
-import { User as UserIcon, LogOut, Building2, Laptop, ShieldCheck, Mail, Calendar, UserCheck, Shield, RefreshCw, QrCode, BookOpen, Terminal, Cpu } from "lucide-react";
+import { User as UserIcon, LogOut, Building2, Laptop, ShieldCheck, Mail, Calendar, UserCheck, Shield, RefreshCw, QrCode } from "lucide-react";
 import { api } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { IntroDoc } from "../components/docs/IntroDoc";
-import { SetupDoc } from "../components/docs/SetupDoc";
-import { CredentialsDoc } from "../components/docs/CredentialsDoc";
-import { TwoFactorDoc } from "../components/docs/TwoFactorDoc";
-import { OtpDoc } from "../components/docs/OtpDoc";
-import { SocialDoc } from "../components/docs/SocialDoc";
+import { Link } from "@tanstack/react-router";
 
 interface DashboardProps {
   user: {
@@ -34,8 +29,6 @@ export default function Dashboard({ user, onLogout, onNavigateOrgs, onNavigateCl
   const [code, setCode] = useState("");
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<"dashboard" | "docs">("dashboard");
-  const [docSection, setDocSection] = useState<string>("intro");
 
   const fetchSessions = async () => {
     try {
@@ -125,27 +118,10 @@ export default function Dashboard({ user, onLogout, onNavigateOrgs, onNavigateCl
             <h1 className="text-3xl font-extrabold tracking-tight">Developer Portal</h1>
             <p className="text-muted-foreground text-sm">Welcome back, {user.email}</p>
           </div>
-          <div className="flex items-center gap-2 bg-secondary/50 p-1 rounded-lg border border-border mt-2 md:mt-0">
-            <button
-              onClick={() => setActiveTab("dashboard")}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                activeTab === "dashboard"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => setActiveTab("docs")}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                activeTab === "docs"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
+          <div className="flex items-center gap-2 mt-2 md:mt-0">
+            <Link to="/docs" className="px-3 py-1.5 rounded-md text-xs font-semibold bg-secondary/50 border border-border text-foreground hover:bg-secondary transition-all">
               Developer API Docs
-            </button>
+            </Link>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -156,53 +132,7 @@ export default function Dashboard({ user, onLogout, onNavigateOrgs, onNavigateCl
         </div>
       </div>
 
-      {activeTab === "docs" ? (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Left Sidebar */}
-          <div className="md:col-span-1 space-y-2">
-            {[
-              { id: "intro", title: "Introduction", icon: BookOpen },
-              { id: "setup", title: "Getting Started", icon: Terminal },
-              { id: "credentials", title: "Credentials Login", icon: ShieldCheck },
-              { id: "2fa", title: "Multi-Factor Auth (2FA)", icon: Shield },
-              { id: "otp", title: "Decoupled OTP Mediator", icon: Cpu },
-              { id: "social", title: "Social Logins", icon: Laptop },
-            ].map((section) => {
-              const Icon = section.icon;
-              return (
-                <button
-                  key={section.id}
-                  onClick={() => setDocSection(section.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm font-semibold border transition-all ${
-                    docSection === section.id
-                      ? "bg-primary/10 border-primary/20 text-primary shadow-sm"
-                      : "bg-card/50 border-border text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span>{section.title}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Right Main Panel */}
-          <div className="md:col-span-3 space-y-6">
-            <Card className="border-border">
-              <CardContent className="pt-6 space-y-6">
-                {docSection === "intro" && <IntroDoc />}
-                {docSection === "setup" && <SetupDoc />}
-                {docSection === "credentials" && <CredentialsDoc />}
-                {docSection === "2fa" && <TwoFactorDoc />}
-                {docSection === "otp" && <OtpDoc />}
-                {docSection === "social" && <SocialDoc />}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Stats row */}
+      {/* Stats row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <Card className="bg-card/50 border-border">
               <CardContent className="pt-6 flex items-center justify-between">
@@ -483,8 +413,6 @@ export default function Dashboard({ user, onLogout, onNavigateOrgs, onNavigateCl
               </Card>
             </div>
           </div>
-        </>
-      )}
     </div>
   );
 }
