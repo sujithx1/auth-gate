@@ -1,4 +1,5 @@
-import { ShieldCheck, Laptop, Key, Building2, Server, Shield, Cpu, Code } from "lucide-react";
+import { useState } from "react";
+import { ShieldCheck, Laptop, Key, Building2, Server, Shield, Cpu, Code, CheckCircle2 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { CodeBlock } from "../components/docs/CodeBlock";
@@ -7,8 +8,101 @@ interface LandingProps {
   onGoToConsole: () => void;
 }
 
+type TabType = "config" | "db" | "oauth" | "integrations";
+
+interface CodeSnippet {
+  id: TabType;
+  title: string;
+  filename: string;
+  envBadge: string;
+  description: string;
+  code: string;
+}
+
+const SNIPPETS: Record<TabType, CodeSnippet> = {
+  config: {
+    id: "config",
+    title: "Declarative Config",
+    filename: "auth.config.ts",
+    envBadge: "PORT, AUTH_SECRET, VITE_API_URL",
+    description: "Initialize AuthGate declaratively with environment configuration.",
+    code: `import { createAuthGate } from "@authgate/core";
+
+export const authGate = createAuthGate({
+  port: Number(process.env.PORT) || 3005,
+  secret: process.env.AUTH_SECRET, // JWT & Cookie Signing Secret
+  baseUrl: process.env.VITE_API_URL || "http://localhost:3005",
+  allowedOrigins: process.env.ALLOWED_ORIGINS?.split(",") || [],
+  environment: process.env.NODE_ENV || "development",
+});`
+  },
+  db: {
+    id: "db",
+    title: "Bring Your Own DB",
+    filename: "db.config.ts",
+    envBadge: "DATABASE_URL (Postgres, MySQL, SQLite)",
+    description: "Plug in your own database via environment variables using Drizzle or ORM adapter.",
+    code: `import { drizzleAdapter } from "@authgate/drizzle";
+import { createAuthGate } from "@authgate/core";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+
+// Client passes their DB connection string from process.env
+const sql = postgres(process.env.DATABASE_URL!, { max: 10 });
+const db = drizzle(sql);
+
+export const authGate = createAuthGate({
+  // Pluggable DB Adapter - Bring Your Own Database!
+  database: drizzleAdapter(db),
+});`
+  },
+  oauth: {
+    id: "oauth",
+    title: "OAuth Providers",
+    filename: "oauth.config.ts",
+    envBadge: "GOOGLE_CLIENT_ID, GITHUB_CLIENT_SECRET",
+    description: "Configure third-party social authentication with environment credentials.",
+    code: `import { OAuthService } from "@authgate/oauth";
+
+// Client configures provider credentials via process.env
+export const oauth = new OAuthService({
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    redirectUri: \`\${process.env.VITE_API_URL}/api/oauth/google/callback\`,
+  },
+  github: {
+    clientId: process.env.GITHUB_CLIENT_ID!,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+  },
+});`
+  },
+  integrations: {
+    id: "integrations",
+    title: "Integrations",
+    filename: "integrations.config.ts",
+    envBadge: "RESEND_API_KEY, TWILIO_AUTH_TOKEN",
+    description: "Connect custom email and SMS delivery providers seamlessly.",
+    code: `import { AuthGateClient } from "@authgate/client";
+
+export const auth = new AuthGateClient({
+  apiUrl: process.env.VITE_API_URL,
+  // Custom Email & SMS delivery adapters configured via .env
+  emailProvider: {
+    apiKey: process.env.RESEND_API_KEY,
+    from: process.env.EMAIL_FROM || "auth@yourdomain.com",
+  },
+  smsProvider: {
+    accountSid: process.env.TWILIO_ACCOUNT_SID,
+    authToken: process.env.TWILIO_AUTH_TOKEN,
+  },
+});`
+  }
+};
+
 export default function Landing({ onGoToConsole }: LandingProps) {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<TabType>("config");
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen w-full bg-background text-foreground overflow-hidden font-sans transition-colors duration-200">
@@ -139,54 +233,73 @@ export default function Landing({ onGoToConsole }: LandingProps) {
            {/* Framework Section */}
            <div className="space-y-8 pb-16 border-t border-border pt-16">
               <div className="space-y-2">
-                 <h2 className="text-2xl font-bold tracking-tight">Framework</h2>
-                 <p className="text-muted-foreground text-sm">The most comprehensive authentication framework for TypeScript.</p>
+                 <h2 className="text-2xl font-bold tracking-tight">Framework Configuration</h2>
+                 <p className="text-muted-foreground text-sm">
+                   Bring your own database, secrets, and provider credentials using environment variables (<code className="text-primary font-mono text-xs">.env</code>).
+                 </p>
               </div>
 
-              <div className="flex flex-col lg:flex-row gap-8">
-                 <div className="flex-1 rounded-xl border border-border bg-card overflow-hidden relative shadow-2xl">
-                    <div className="h-12 bg-muted/40 border-b border-border flex items-center px-4">
-                       <span className="text-xs text-muted-foreground font-mono flex items-center gap-2"><Code className="w-4 h-4" /> auth.ts</span>
-                    </div>
-                    <div className="p-4 bg-transparent border-0">
-                      <CodeBlock 
-                        className="bg-transparent border-0 text-foreground overflow-x-auto leading-loose"
-                        code={`import { AuthGateClient } from "@sujithx/authgate"
+              <div className="flex flex-col lg:flex-row gap-6 items-start">
+                 {/* Code Editor Mockup Window (Docker / macOS style) */}
+                 <div className="flex-1 w-full rounded-xl border border-border/80 bg-card overflow-hidden shadow-2xl relative transition-all duration-300">
+                    
+                    {/* Top Window Bar */}
+                    <div className="h-11 bg-muted/60 border-b border-border flex items-center justify-between px-4 select-none">
+                       <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block" />
+                          <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
+                          <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
+                          <span className="ml-2 text-xs font-mono font-medium text-foreground/80 flex items-center gap-1.5">
+                             <Code className="w-3.5 h-3.5 text-primary" />
+                             {SNIPPETS[activeTab].filename}
+                          </span>
+                       </div>
 
-export const auth = new AuthGateClient({
-  baseUrl: "http://localhost:3005",
-  credentials: "include",
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    },
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    },
-  },
-  plugins: [
-    twoFactor(),
-    otpMediator()
-  ]
-})`} />
+                       <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary/80 text-[11px] font-mono text-muted-foreground border border-border/50">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          .env: {SNIPPETS[activeTab].envBadge}
+                       </div>
+                    </div>
+
+                    {/* Subtitle / Description bar */}
+                    <div className="px-4 py-2 bg-muted/20 border-b border-border/40 text-xs text-muted-foreground font-mono flex items-center justify-between">
+                       <span>{SNIPPETS[activeTab].description}</span>
+                    </div>
+
+                    {/* Code Block Content */}
+                    <div className="p-4 bg-card/60">
+                      <CodeBlock 
+                        className="bg-transparent border-0 text-foreground overflow-x-auto leading-relaxed text-xs font-mono"
+                        code={SNIPPETS[activeTab].code} 
+                      />
                     </div>
                  </div>
 
-                 <div className="w-full lg:w-48 flex flex-col gap-6 text-[10px] font-bold text-muted-foreground tracking-[0.15em] pt-4">
-                    <button className="text-left text-foreground border-l-[3px] border-primary pl-4 py-1 uppercase transition-colors">
-                       Declarative Config
-                    </button>
-                    <button className="text-left border-l-[3px] border-transparent hover:border-border hover:text-foreground pl-4 py-1 uppercase transition-colors">
-                       Bring Your Own DB
-                    </button>
-                    <button className="text-left border-l-[3px] border-transparent hover:border-border hover:text-foreground pl-4 py-1 uppercase transition-colors">
-                       OAuth Providers
-                    </button>
-                    <button className="text-left border-l-[3px] border-transparent hover:border-border hover:text-foreground pl-4 py-1 uppercase transition-colors">
-                       Integrations
-                    </button>
+                 {/* Interactive Navigation Sidebar Buttons */}
+                 <div className="w-full lg:w-56 flex flex-col gap-2.5 pt-1">
+                    {(Object.keys(SNIPPETS) as TabType[]).map((tabKey) => {
+                      const snippet = SNIPPETS[tabKey];
+                      const isActive = activeTab === tabKey;
+                      return (
+                        <button
+                          key={tabKey}
+                          onClick={() => setActiveTab(tabKey)}
+                          className={`group text-left p-3 rounded-lg border text-xs transition-all duration-200 flex flex-col gap-1 ${
+                            isActive
+                              ? "border-primary bg-primary/10 text-foreground font-semibold shadow-sm"
+                              : "border-border/60 bg-card/30 text-muted-foreground hover:border-border hover:bg-card/70 hover:text-foreground"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                             <span className="uppercase tracking-wider font-mono text-[11px]">{snippet.title}</span>
+                             {isActive && <CheckCircle2 className="w-3.5 h-3.5 text-primary" />}
+                          </div>
+                          <span className="text-[10px] font-mono text-muted-foreground/80 truncate">
+                            {snippet.filename}
+                          </span>
+                        </button>
+                      );
+                    })}
                  </div>
               </div>
            </div>
@@ -195,3 +308,4 @@ export const auth = new AuthGateClient({
     </div>
   );
 }
+
