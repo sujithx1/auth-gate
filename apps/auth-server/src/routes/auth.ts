@@ -362,20 +362,24 @@ export function createAuthRouter(
     const redirectUri = c.req.url.split("?")[0];
     
     // Exchange token
+    const payload = {
+      code,
+      client_id: env.GOOGLE_CLIENT_ID || "",
+      client_secret: env.GOOGLE_CLIENT_SECRET || "",
+      redirect_uri: redirectUri,
+      grant_type: "authorization_code",
+    };
+    console.log("Exchanging Google OAuth token with payload:", { ...payload, client_secret: payload.client_secret ? "***[PROVIDED]***" : "***[MISSING]***" });
+
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        code,
-        client_id: env.GOOGLE_CLIENT_ID || "",
-        client_secret: env.GOOGLE_CLIENT_SECRET || "",
-        redirect_uri: redirectUri,
-        grant_type: "authorization_code",
-      }),
+      body: new URLSearchParams(payload),
     });
 
     const tokens: any = await tokenRes.json();
     if (!tokens.access_token) {
+      console.error("Google OAuth token exchange failed:", tokens);
       return c.text("Failed to exchange google oauth token.", 400);
     }
 
