@@ -5,12 +5,38 @@ export function SetupDoc() {
   const [codeTab, setCodeTab] = useState<"bun" | "node" | "deno">("bun");
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold">Getting Started</h2>
-      <p className="text-sm text-muted-foreground">
-        Install the client SDK inside your application workspace to initialize your connection context:
-      </p>
-      <CodeBlock code="npm install @sujithx/authgate" className="text-primary" />
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold">Getting Started</h2>
+        <p className="text-sm text-muted-foreground">
+          The AuthGate client SDK is a universal wrapper around the AuthGate API, providing type-safe methods to handle authentication across multiple environments.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-foreground">When is this helpful?</h3>
+        <p className="text-sm text-muted-foreground">
+          You should use the SDK whenever you are building a frontend application or a backend service that needs to verify sessions, manage users, or interact with the AuthGate ecosystem. It works seamlessly across Node.js, Bun, Deno, and the browser.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-foreground">Solving the problem</h3>
+        <p className="text-sm text-muted-foreground">
+          Directly calling REST APIs with \`fetch\` requires manually passing credentials, parsing errors, managing base URLs, and repeating typing information across your codebase. This leads to brittle integrations.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-foreground">How this SDK does it</h3>
+        <p className="text-sm text-muted-foreground">
+          First, install the SDK via your package manager:
+        </p>
+        <CodeBlock code="npm install @sujithx/authgate" className="text-primary" />
+        <p className="text-sm text-muted-foreground pt-4">
+          Then, initialize the client once and use it everywhere. The SDK automatically attaches session cookies and infers TypeScript return types.
+        </p>
+      </div>
 
       {/* Runtime Tab Selector */}
       <div className="flex gap-2 border-b border-border pb-2 mt-6">
