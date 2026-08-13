@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CodeBlock } from "./CodeBlock";
 
 export function SetupDoc() {
+  const [installTab, setInstallTab] = useState<"npm" | "bun" | "deno">("npm");
   const [codeTab, setCodeTab] = useState<"bun" | "node" | "deno">("bun");
 
   return (
@@ -32,7 +33,24 @@ export function SetupDoc() {
         <p className="text-sm text-muted-foreground">
           First, install the SDK via your package manager:
         </p>
-        <CodeBlock code="npm install @sujithx/authgate" className="text-primary" />
+        <div className="flex gap-2 border-b border-border pb-2 mt-2">
+          {(["npm", "bun", "deno"] as const).map((r) => (
+            <button
+              key={r}
+              onClick={() => setInstallTab(r)}
+              className={`px-3 py-1 text-xs font-semibold rounded ${
+                installTab === r ? "bg-primary/10 text-primary" : "text-muted-foreground"
+              }`}
+            >
+              {r === "npm" ? "npm" : r === "bun" ? "Bun" : "Deno"}
+            </button>
+          ))}
+        </div>
+        <div className="mt-2">
+          {installTab === "npm" && <CodeBlock code="npm install @sujithx/authgate" className="text-primary" />}
+          {installTab === "bun" && <CodeBlock code="bun add @sujithx/authgate" className="text-primary" />}
+          {installTab === "deno" && <CodeBlock code="deno add npm:@sujithx/authgate" className="text-primary" />}
+        </div>
         <p className="text-sm text-muted-foreground pt-4">
           Then, initialize the client once and use it everywhere. The SDK automatically attaches session cookies and infers TypeScript return types.
         </p>
