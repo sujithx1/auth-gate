@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { KeyRound, Eye, EyeOff, RefreshCw } from "lucide-react";
 import { api } from "../lib/api";
+import { env } from "../env";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -161,7 +162,7 @@ export default function Login({ onSuccess, onNavigate, onError }: LoginProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => { window.location.href = "/api/auth/social/google"; }}
+              onClick={() => { window.location.href = `${env.VITE_API_URL}/api/auth/social/google`; }}
               className="w-full border-border hover:bg-muted"
             >
               <svg className="w-4 h-4 mr-2 shrink-0" viewBox="0 0 24 24" fill="currentColor">
@@ -175,7 +176,7 @@ export default function Login({ onSuccess, onNavigate, onError }: LoginProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => { window.location.href = "/api/auth/social/github"; }}
+              onClick={() => { window.location.href = `${env.VITE_API_URL}/api/auth/social/github`; }}
               className="w-full border-border hover:bg-muted"
             >
               <svg className="w-4 h-4 mr-2 shrink-0" viewBox="0 0 24 24" fill="currentColor">
