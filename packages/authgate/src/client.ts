@@ -147,4 +147,65 @@ export class AuthGateClient {
       method: "POST",
     });
   }
+
+  /**
+   * Initiate social login flow by redirecting the browser.
+   * Note: This method only works in browser environments.
+   */
+  socialLogin(provider: "google" | "github") {
+    if (typeof window !== "undefined") {
+      window.location.href = `${this.baseUrl}/api/auth/social/${provider}`;
+    } else {
+      throw new Error("socialLogin() can only be called in a browser environment.");
+    }
+  }
+
+  /**
+   * Request authenticator registration for 2FA.
+   */
+  async enableTwoFactor() {
+    return this.request<{ success: boolean; data: { secret: string; uri: string } }>("/api/auth/2fa/enable", {
+      method: "POST",
+    });
+  }
+
+  /**
+   * Validate passcode to confirm and activate 2FA, or to verify during login.
+   */
+  async verifyTwoFactor(code: string) {
+    return this.request<{ success: boolean; data: { backupCodes?: string[]; user?: any } }>("/api/auth/2fa/verify", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    });
+  }
+
+  /**
+   * Disable 2FA for the current user.
+   */
+  async disableTwoFactor(code: string) {
+    return this.request<{ success: boolean }>("/api/auth/2fa/disable", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    });
+  }
+
+  /**
+   * Generate an OTP code for a user.
+   */
+  async generateOtp(options: { identifier: string; length?: number; expiresSeconds?: number }) {
+    return this.request<{ success: boolean; data: { code: string } }>("/api/auth/otp/generate", {
+      method: "POST",
+      body: JSON.stringify(options),
+    });
+  }
+
+  /**
+   * Verify an OTP code.
+   */
+  async verifyOtp(options: { identifier: string; code: string }) {
+    return this.request<{ success: boolean; data: { user: any } }>("/api/auth/otp/verify", {
+      method: "POST",
+      body: JSON.stringify(options),
+    });
+  }
 }

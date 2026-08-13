@@ -32,8 +32,8 @@ export function SocialDoc() {
       </div>
 
       <CodeBlock code={`// Redirect browser to trigger social consent redirects
-window.location.href = "http://localhost:3005/api/auth/social/google";
-window.location.href = "http://localhost:3005/api/auth/social/github";`} />
+auth.socialLogin("google");
+auth.socialLogin("github");`} />
     </div>
   );
 }
