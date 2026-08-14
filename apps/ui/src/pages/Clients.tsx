@@ -53,6 +53,16 @@ export default function Clients({ onBack, onError }: ClientsProps) {
 
   const handleCreateClient = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!name.trim()) {
+      onError("Please enter application name.");
+      return;
+    }
+    if (!redirectUrisInput.trim()) {
+      onError("Please enter at least one redirect URI.");
+      return;
+    }
+
     setCreateLoading(true);
     setNewClient(null);
     try {
@@ -62,8 +72,14 @@ export default function Clients({ onBack, onError }: ClientsProps) {
         .map((url) => url.trim())
         .filter((url) => url.length > 0);
 
+      if (redirectUris.length === 0) {
+        onError("Please enter at least one valid redirect URI.");
+        setCreateLoading(false);
+        return;
+      }
+
       const res: any = await api.post("/api/oauth/clients", {
-        name,
+        name: name.trim(),
         redirectUris,
       });
 
@@ -200,7 +216,7 @@ export default function Clients({ onBack, onError }: ClientsProps) {
         </Card>
 
         <Card>
-          <form onSubmit={handleCreateClient}>
+          <form noValidate onSubmit={handleCreateClient}>
             <CardHeader>
               <CardTitle className="text-lg">Register Client</CardTitle>
               <CardDescription>Configure a new client application credentials</CardDescription>
@@ -213,7 +229,6 @@ export default function Clients({ onBack, onError }: ClientsProps) {
                   placeholder="e.g. My Developer Dashboard"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  required
                 />
               </div>
               <div className="space-y-1.5">
@@ -223,7 +238,6 @@ export default function Clients({ onBack, onError }: ClientsProps) {
                   placeholder="Comma separated redirect URLs"
                   value={redirectUrisInput}
                   onChange={(e) => setRedirectUrisInput(e.target.value)}
-                  required
                 />
               </div>
             </CardContent>

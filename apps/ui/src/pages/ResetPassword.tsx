@@ -19,10 +19,24 @@ export default function ResetPassword({ initialToken = "", onSuccess, onNavigate
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!token.trim()) {
+      onError("Please enter your recovery token.");
+      return;
+    }
+    if (!newPassword) {
+      onError("Please enter a new password.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      onError("New password must be at least 8 characters long.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await api.post("/api/auth/reset-password", { token, newPassword });
+      await api.post("/api/auth/reset-password", { token: token.trim(), newPassword });
       onSuccess("Password reset successfully. You can now log in.");
     } catch (e: any) {
       onError(e.error?.message || "Failed to reset password.");
@@ -33,7 +47,7 @@ export default function ResetPassword({ initialToken = "", onSuccess, onNavigate
 
   return (
     <Card>
-      <form onSubmit={handleSubmit}>
+      <form noValidate onSubmit={handleSubmit}>
         <CardHeader>
           <CardTitle>Update Password</CardTitle>
           <CardDescription>Enter the recovery token and pick a new password</CardDescription>
@@ -54,7 +68,6 @@ export default function ResetPassword({ initialToken = "", onSuccess, onNavigate
               type="text"
               value={token}
               onChange={(e) => setToken(e.target.value)}
-              required
             />
           </div>
           <div className="space-y-2">
@@ -65,7 +78,6 @@ export default function ResetPassword({ initialToken = "", onSuccess, onNavigate
               placeholder="At least 8 characters"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              required
             />
           </div>
         </CardContent>

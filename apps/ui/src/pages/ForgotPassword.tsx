@@ -18,10 +18,21 @@ export default function ForgotPassword({ onSuccess, onNavigate, onError }: Forgo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!email.trim()) {
+      onError("Please enter your email address.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      onError("Please enter a valid email address.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const data: any = await api.post("/api/auth/forgot-password", { email });
+      const data: any = await api.post("/api/auth/forgot-password", { email: email.trim() });
       if (data.data.resetToken) {
         onSuccess(data.data.resetToken, "Password reset token generated (simulating email dispatch).");
       } else {
@@ -36,7 +47,7 @@ export default function ForgotPassword({ onSuccess, onNavigate, onError }: Forgo
 
   return (
     <Card>
-      <form onSubmit={handleSubmit}>
+      <form noValidate onSubmit={handleSubmit}>
         <CardHeader>
           <CardTitle>Reset Password</CardTitle>
           <CardDescription>Request a secure password recovery flow</CardDescription>
@@ -50,7 +61,6 @@ export default function ForgotPassword({ onSuccess, onNavigate, onError }: Forgo
               placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
             />
           </div>
         </CardContent>

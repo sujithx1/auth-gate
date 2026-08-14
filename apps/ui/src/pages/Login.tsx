@@ -26,6 +26,28 @@ export default function Login({ onSuccess, onNavigate, onError }: LoginProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (twoFactorRequired) {
+      if (!twoFactorCode.trim()) {
+        onError("Please enter your verification code.");
+        return;
+      }
+    } else {
+      if (!email.trim()) {
+        onError("Please enter your email address.");
+        return;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        onError("Please enter a valid email address.");
+        return;
+      }
+      if (!password) {
+        onError("Please enter your password.");
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -33,12 +55,12 @@ export default function Login({ onSuccess, onNavigate, onError }: LoginProps) {
         // Step 2: verify 2FA code
         const data: any = await api.post("/api/auth/login/verify-2fa", {
           userId: tempUserId,
-          code: twoFactorCode,
+          code: twoFactorCode.trim(),
         });
         onSuccess(data.data.user);
       } else {
         // Step 1: verify email & password
-        const data: any = await api.post("/api/auth/login", { email, password });
+        const data: any = await api.post("/api/auth/login", { email: email.trim(), password });
         if (data.twoFactorRequired) {
           setTwoFactorRequired(true);
           setTempUserId(data.userId);
@@ -56,7 +78,7 @@ export default function Login({ onSuccess, onNavigate, onError }: LoginProps) {
   if (twoFactorRequired) {
     return (
       <Card>
-        <form onSubmit={handleSubmit}>
+        <form noValidate onSubmit={handleSubmit}>
           <CardHeader>
             <CardTitle>Two-Factor Verification</CardTitle>
             <CardDescription>Enter the 6-digit authenticator passcode or a backup recovery code.</CardDescription>
@@ -71,7 +93,6 @@ export default function Login({ onSuccess, onNavigate, onError }: LoginProps) {
                 placeholder="123456"
                 value={twoFactorCode}
                 onChange={(e) => setTwoFactorCode(e.target.value)}
-                required
               />
             </div>
           </CardContent>
@@ -98,7 +119,7 @@ export default function Login({ onSuccess, onNavigate, onError }: LoginProps) {
 
   return (
     <Card>
-      <form onSubmit={handleSubmit}>
+      <form noValidate onSubmit={handleSubmit}>
         <CardHeader>
           <CardTitle>Welcome back</CardTitle>
           <CardDescription>Enter your account credentials to log in</CardDescription>
@@ -112,7 +133,6 @@ export default function Login({ onSuccess, onNavigate, onError }: LoginProps) {
               placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
             />
           </div>
           <div className="space-y-2">
@@ -133,7 +153,6 @@ export default function Login({ onSuccess, onNavigate, onError }: LoginProps) {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
               />
               <button
                 type="button"

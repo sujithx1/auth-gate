@@ -80,9 +80,17 @@ export default function Organizations({ onBack, onError }: OrganizationsProps) {
 
   const handleCreateOrg = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) {
+      onError("Please enter organization name.");
+      return;
+    }
+    if (!slug.trim()) {
+      onError("Please enter organization slug.");
+      return;
+    }
     setCreateLoading(true);
     try {
-      await api.post("/api/orgs", { name, slug });
+      await api.post("/api/orgs", { name: name.trim(), slug: slug.trim() });
       setName("");
       setSlug("");
       fetchOrgs();
@@ -96,10 +104,20 @@ export default function Organizations({ onBack, onError }: OrganizationsProps) {
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedOrg) return;
+    if (!email.trim()) {
+      onError("Please enter invitee email address.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      onError("Please enter a valid email address.");
+      return;
+    }
+
     setInviteLoading(true);
     setInviteToken(null);
     try {
-      const res: any = await api.post(`/api/orgs/${selectedOrg.id}/invite`, { email, role });
+      const res: any = await api.post(`/api/orgs/${selectedOrg.id}/invite`, { email: email.trim(), role });
       setEmail("");
       setInviteToken(res.data.invitation.token);
       fetchMembers(selectedOrg.id);
@@ -112,10 +130,14 @@ export default function Organizations({ onBack, onError }: OrganizationsProps) {
 
   const handleAcceptInvitation = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!acceptToken.trim()) {
+      onError("Please enter invitation token.");
+      return;
+    }
     setAcceptLoading(true);
     setAcceptSuccess(false);
     try {
-      await api.post(`/api/orgs/invitations/${acceptToken}/accept`);
+      await api.post(`/api/orgs/invitations/${acceptToken.trim()}/accept`);
       setAcceptToken("");
       setAcceptSuccess(true);
       fetchOrgs();
@@ -170,7 +192,7 @@ export default function Organizations({ onBack, onError }: OrganizationsProps) {
               </div>
             </div>
 
-            <form onSubmit={handleInvite} className="space-y-4 border-t border-border/40 pt-5">
+            <form noValidate onSubmit={handleInvite} className="space-y-4 border-t border-border/40 pt-5">
               <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
                 <UserPlus className="w-4 h-4 text-purple-400" />
                 Invite Member
@@ -184,7 +206,6 @@ export default function Organizations({ onBack, onError }: OrganizationsProps) {
                     placeholder="member@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    required
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -255,7 +276,7 @@ export default function Organizations({ onBack, onError }: OrganizationsProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
-              <form onSubmit={handleCreateOrg}>
+              <form noValidate onSubmit={handleCreateOrg}>
                 <CardHeader>
                   <CardTitle className="text-lg">Create Organization</CardTitle>
                   <CardDescription>Establish a new workspace entity</CardDescription>
@@ -268,7 +289,6 @@ export default function Organizations({ onBack, onError }: OrganizationsProps) {
                       placeholder="e.g. Acme Corp"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      required
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -278,7 +298,6 @@ export default function Organizations({ onBack, onError }: OrganizationsProps) {
                       placeholder="e.g. acme"
                       value={slug}
                       onChange={(e) => setSlug(e.target.value)}
-                      required
                     />
                   </div>
                 </CardContent>
@@ -292,7 +311,7 @@ export default function Organizations({ onBack, onError }: OrganizationsProps) {
             </Card>
 
             <Card>
-              <form onSubmit={handleAcceptInvitation}>
+              <form noValidate onSubmit={handleAcceptInvitation}>
                 <CardHeader>
                   <CardTitle className="text-lg">Accept Invitation</CardTitle>
                   <CardDescription>Join an existing organization via invitation token</CardDescription>
@@ -305,7 +324,6 @@ export default function Organizations({ onBack, onError }: OrganizationsProps) {
                       placeholder="Enter invite token code"
                       value={acceptToken}
                       onChange={(e) => setAcceptToken(e.target.value)}
-                      required
                     />
                   </div>
                   {acceptSuccess && (

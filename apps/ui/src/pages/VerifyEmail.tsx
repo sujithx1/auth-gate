@@ -19,10 +19,16 @@ export default function VerifyEmail({ initialToken = "", onSuccess, onNavigate, 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!token.trim()) {
+      onError("Please enter your verification token.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await api.post("/api/auth/verify-email", { token });
+      await api.post("/api/auth/verify-email", { token: token.trim() });
       onSuccess("Email verified successfully! You can now log in.");
     } catch (e: any) {
       onError(e.error?.message || "Failed to verify email.");
@@ -33,7 +39,7 @@ export default function VerifyEmail({ initialToken = "", onSuccess, onNavigate, 
 
   return (
     <Card>
-      <form onSubmit={handleSubmit}>
+      <form noValidate onSubmit={handleSubmit}>
         <CardHeader>
           <CardTitle>Verify Your Email</CardTitle>
           <CardDescription>Enter the token received to complete verification</CardDescription>
@@ -55,7 +61,6 @@ export default function VerifyEmail({ initialToken = "", onSuccess, onNavigate, 
               placeholder="Enter verification code"
               value={token}
               onChange={(e) => setToken(e.target.value)}
-              required
             />
           </div>
         </CardContent>

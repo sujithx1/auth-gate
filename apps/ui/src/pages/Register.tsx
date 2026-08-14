@@ -20,10 +20,29 @@ export default function Register({ onSuccess, onNavigate, onError }: RegisterPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!email.trim()) {
+      onError("Please enter your email address.");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      onError("Please enter a valid email address.");
+      return;
+    }
+    if (!password) {
+      onError("Please enter a password.");
+      return;
+    }
+    if (password.length < 8) {
+      onError("Password must be at least 8 characters long.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const data: any = await api.post("/api/auth/register", { email, password });
+      const data: any = await api.post("/api/auth/register", { email: email.trim(), password });
       onSuccess(data.data.verificationToken, "Registration successful! Verify your email to login.");
     } catch (e: any) {
       onError(e.error?.message || "Failed to register.");
@@ -34,7 +53,7 @@ export default function Register({ onSuccess, onNavigate, onError }: RegisterPro
 
   return (
     <Card>
-      <form onSubmit={handleSubmit}>
+      <form noValidate onSubmit={handleSubmit}>
         <CardHeader>
           <CardTitle>Create Account</CardTitle>
           <CardDescription>Register a new identity user on the platform</CardDescription>
@@ -48,7 +67,6 @@ export default function Register({ onSuccess, onNavigate, onError }: RegisterPro
               placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
             />
           </div>
           <div className="space-y-2">
@@ -60,7 +78,6 @@ export default function Register({ onSuccess, onNavigate, onError }: RegisterPro
                 placeholder="At least 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
               />
               <button
                 type="button"
