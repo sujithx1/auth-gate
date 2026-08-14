@@ -347,9 +347,10 @@ export function createAuthRouter(
     if (!env.GOOGLE_CLIENT_ID) {
       return c.redirect("/api/auth/social/mock-consent?provider=google");
     }
-    const redirectUri = `${c.req.url}/callback`;
-    console.log("env.GOOGLE_CLIENT_ID", env.GOOGLE_CLIENT_ID)
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${env.GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20profile%20email&state=google-state`;
+    const redirectUri = `${c.req.url.split("?")[0]}/callback`;
+    const returnTo = c.req.query("redirect_url") || c.req.header("referer");
+    const state = returnTo ? encodeURIComponent(returnTo) : "google-state";
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${env.GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20profile%20email&state=${state}`;
     return c.redirect(googleAuthUrl);
   });
 
@@ -409,7 +410,16 @@ export function createAuthRouter(
       path: "/",
     });
 
-    const targetOrigin = env.ALLOWED_ORIGINS?.split(",")[0]?.trim() || "http://localhost:5173";
+    const stateParam = c.req.query("state");
+    let targetOrigin = env.ALLOWED_ORIGINS?.split(",")[0]?.trim() || "http://localhost:5173";
+    if (stateParam && stateParam !== "google-state") {
+      try {
+        const decoded = decodeURIComponent(stateParam);
+        if (decoded.startsWith("http://") || decoded.startsWith("https://")) {
+          targetOrigin = decoded;
+        }
+      } catch (e) {}
+    }
     return c.redirect(targetOrigin);
   });
 
