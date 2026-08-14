@@ -99,8 +99,13 @@ app.route("/api/orgs", orgRouter);
 app.route("/api/rbac", rbacRouter);
 app.route("/api/oauth", oauthRouter);
 
+console.log(`🚀 AuthServer running on http://localhost:${env.PORT}`);
+
 export default {
   port: env.PORT,
   fetch: app.fetch,
+  idleTimeout: 30,
 };
+
+
 export { app };

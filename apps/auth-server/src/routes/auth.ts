@@ -68,7 +68,7 @@ export function createAuthRouter(
 
     try {
       const user = await authService.login(parsed.email, parsed.password);
-      
+
       const userAgent = c.req.header("user-agent");
       const ipAddress = c.req.header("x-forwarded-for") || "127.0.0.1";
 
@@ -348,6 +348,7 @@ export function createAuthRouter(
       return c.redirect("/api/auth/social/mock-consent?provider=google");
     }
     const redirectUri = `${c.req.url}/callback`;
+    console.log("env.GOOGLE_CLIENT_ID", env.GOOGLE_CLIENT_ID)
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${env.GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20profile%20email&state=google-state`;
     return c.redirect(googleAuthUrl);
   });
@@ -360,7 +361,7 @@ export function createAuthRouter(
     if (!code) return c.text("Authorization code missing.", 400);
 
     const redirectUri = c.req.url.split("?")[0];
-    
+
     // Exchange token
     const payload = {
       code,
@@ -394,7 +395,7 @@ export function createAuthRouter(
     }
 
     const user = await authService.loginOrRegisterWithSocial("google", info.sub, info.email);
-    
+
     // Create session & cookies
     const userAgent = c.req.header("user-agent");
     const ipAddress = c.req.header("x-forwarded-for") || "127.0.0.1";
@@ -472,7 +473,7 @@ export function createAuthRouter(
     }
 
     const user = await authService.loginOrRegisterWithSocial("github", String(profile.id), primaryEmail);
-    
+
     // Create session & cookies
     const userAgent = c.req.header("user-agent");
     const ipAddress = c.req.header("x-forwarded-for") || "127.0.0.1";
