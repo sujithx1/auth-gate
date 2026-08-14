@@ -1,10 +1,19 @@
 import React from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { ShieldCheck } from "lucide-react";
 import Login from "../pages/Login";
-import { queryClient } from "../router";
+import { queryClient, fetchUserSession } from "../router";
 
 export const Route = createFileRoute("/login")({
+  beforeLoad: async () => {
+    const user = await queryClient.fetchQuery({
+      queryKey: ["session"],
+      queryFn: fetchUserSession,
+    });
+    if (user) {
+      throw redirect({ to: "/dashboard" });
+    }
+  },
   component: LoginComponent,
 });
 

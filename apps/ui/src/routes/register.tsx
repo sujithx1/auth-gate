@@ -1,9 +1,19 @@
 import React from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { ShieldCheck } from "lucide-react";
 import Register from "../pages/Register";
+import { queryClient, fetchUserSession } from "../router";
 
 export const Route = createFileRoute("/register")({
+  beforeLoad: async () => {
+    const user = await queryClient.fetchQuery({
+      queryKey: ["session"],
+      queryFn: fetchUserSession,
+    });
+    if (user) {
+      throw redirect({ to: "/dashboard" });
+    }
+  },
   component: RegisterComponent,
 });
 
