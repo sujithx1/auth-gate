@@ -409,7 +409,8 @@ export function createAuthRouter(
       path: "/",
     });
 
-    return c.redirect(env.ALLOWED_ORIGINS || "http://localhost:5173");
+    const targetOrigin = env.ALLOWED_ORIGINS?.split(",")[0]?.trim() || "http://localhost:5173";
+    return c.redirect(targetOrigin);
   });
 
   /**
@@ -487,7 +488,8 @@ export function createAuthRouter(
       path: "/",
     });
 
-    return c.redirect(env.ALLOWED_ORIGINS || "http://localhost:5173");
+    const targetOrigin = env.ALLOWED_ORIGINS?.split(",")[0]?.trim() || "http://localhost:5173";
+    return c.redirect(targetOrigin);
   });
 
   /**
