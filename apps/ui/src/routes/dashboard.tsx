@@ -34,7 +34,6 @@ function DashboardComponent() {
         user={user}
         onLogout={() => {
           queryClient.setQueryData(["session"], null);
-          localStorage.removeItem("authgate-theme");
           navigate({ to: "/login" });
         }}
         onNavigateOrgs={() => navigate({ to: "/orgs" })}

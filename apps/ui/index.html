@@ -9,7 +9,12 @@
       (function() {
         try {
           var saved = localStorage.getItem("authgate-theme");
-          if (saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches) || !saved) {
+          if (!saved) {
+            var match = document.cookie.match(/(?:^|; )authgate_theme=([^;]*)/);
+            if (match) saved = match[1];
+          }
+          var isDark = saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches) || !saved;
+          if (isDark) {
             document.documentElement.classList.add("dark");
           } else {
             document.documentElement.classList.remove("dark");

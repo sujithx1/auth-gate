@@ -12,24 +12,26 @@ function RootComponent() {
 
   const [isDark, setIsDark] = React.useState(() => {
     const saved = localStorage.getItem("authgate-theme");
-    return saved ? saved === "dark" : true;
+    if (saved) return saved === "dark";
+    const cookieMatch = document.cookie.match(/(?:^|; )authgate_theme=([^;]*)/);
+    if (cookieMatch) return cookieMatch[1] === "dark";
+    return true;
   });
 
   React.useEffect(() => {
     const root = window.document.documentElement;
+    const theme = isDark ? "dark" : "light";
     if (isDark) {
       root.classList.add("dark");
     } else {
       root.classList.remove("dark");
     }
+    localStorage.setItem("authgate-theme", theme);
+    document.cookie = `authgate_theme=${theme}; path=/; max-age=31536000; SameSite=Lax`;
   }, [isDark]);
 
   const toggleTheme = () => {
-    setIsDark((prev) => {
-      const next = !prev;
-      localStorage.setItem("authgate-theme", next ? "dark" : "light");
-      return next;
-    });
+    setIsDark((prev) => !prev);
   };
 
   return (

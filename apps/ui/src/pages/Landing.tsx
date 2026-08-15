@@ -167,6 +167,10 @@ export default function Landing({ onGoToConsole }: LandingProps) {
   
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("authgate-theme");
+      if (saved) return saved === "dark";
+      const cookieMatch = document.cookie.match(/(?:^|; )authgate_theme=([^;]*)/);
+      if (cookieMatch) return cookieMatch[1] === "dark";
       return document.documentElement.classList.contains("dark");
     }
     return true;
@@ -174,13 +178,14 @@ export default function Landing({ onGoToConsole }: LandingProps) {
 
   useEffect(() => {
     const root = document.documentElement;
+    const theme = isDark ? "dark" : "light";
     if (isDark) {
       root.classList.add("dark");
-      localStorage.setItem("authgate-theme", "dark");
     } else {
       root.classList.remove("dark");
-      localStorage.setItem("authgate-theme", "light");
     }
+    localStorage.setItem("authgate-theme", theme);
+    document.cookie = `authgate_theme=${theme}; path=/; max-age=31536000; SameSite=Lax`;
   }, [isDark]);
 
   const toggleTheme = () => {
