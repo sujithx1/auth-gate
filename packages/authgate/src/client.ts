@@ -208,4 +208,82 @@ export class AuthGateClient {
       body: JSON.stringify(options),
     });
   }
+
+  /**
+   * Fetch OIDC Discovery document.
+   */
+  async getOidcDiscovery() {
+    const res = await fetch(`${this.baseUrl}/.well-known/openid-configuration`);
+    return res.json();
+  }
+
+  /**
+   * Fetch JWKS public key set.
+   */
+  async getJwks() {
+    const res = await fetch(`${this.baseUrl}/.well-known/jwks.json`);
+    return res.json();
+  }
+
+  /**
+   * Build OAuth / OIDC Authorization URL.
+   */
+  createAuthorizationUrl(options: {
+    clientId: string;
+    redirectUri: string;
+    scope?: string;
+    state?: string;
+    codeChallenge: string;
+    codeChallengeMethod?: "plain" | "S256";
+  }): string {
+    const url = new URL(`${this.baseUrl}/api/oauth/authorize`);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("client_id", options.clientId);
+    url.searchParams.set("redirect_uri", options.redirectUri);
+    url.searchParams.set("code_challenge", options.codeChallenge);
+    url.searchParams.set("code_challenge_method", options.codeChallengeMethod || "S256");
+    if (options.scope) url.searchParams.set("scope", options.scope);
+    if (options.state) url.searchParams.set("state", options.state);
+    return url.toString();
+  }
+
+  /**
+   * Exchange Code for Tokens (Access Token, Refresh Token, ID Token).
+   */
+  async exchangeCodeForToken(options: {
+    clientId: string;
+    clientSecret?: string;
+    code: string;
+    codeVerifier: string;
+  }) {
+    return this.request<{
+      access_token: string;
+      token_type: string;
+      expires_in: number;
+      refresh_token?: string;
+      id_token?: string;
+      scope?: string;
+    }>("/api/oauth/token", {
+      method: "POST",
+      body: JSON.stringify({
+        grant_type: "authorization_code",
+        client_id: options.clientId,
+        client_secret: options.clientSecret,
+        code: options.code,
+        code_verifier: options.codeVerifier,
+      }),
+    });
+  }
+
+  /**
+   * Fetch standard OIDC UserInfo profile claims.
+   */
+  async getUserInfo(accessToken: string) {
+    const response = await fetch(`${this.baseUrl}/api/oauth/userinfo`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return response.json();
+  }
 }
