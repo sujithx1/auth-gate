@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BookOpen, Terminal, ShieldCheck, Shield, Cpu, Laptop } from "lucide-react";
+import { BookOpen, Terminal, ShieldCheck, Shield, Cpu, Laptop, KeyRound } from "lucide-react";
 import { Card, CardContent } from "../components/ui/card";
 import { IntroDoc } from "../components/docs/IntroDoc";
 import { SetupDoc } from "../components/docs/SetupDoc";
@@ -7,6 +7,7 @@ import { CredentialsDoc } from "../components/docs/CredentialsDoc";
 import { TwoFactorDoc } from "../components/docs/TwoFactorDoc";
 import { OtpDoc } from "../components/docs/OtpDoc";
 import { SocialDoc } from "../components/docs/SocialDoc";
+import { OidcDoc } from "../components/docs/OidcDoc";
 import { Link } from "@tanstack/react-router";
 
 export default function Docs() {
@@ -37,6 +38,7 @@ export default function Docs() {
             { id: "2fa", title: "Multi-Factor Auth (2FA)", icon: Shield },
             { id: "otp", title: "Decoupled OTP Mediator", icon: Cpu },
             { id: "social", title: "Social Logins", icon: Laptop },
+            { id: "oidc", title: "OIDC & Enterprise SSO", icon: KeyRound },
           ].map((section) => {
             const Icon = section.icon;
             return (
@@ -66,6 +68,7 @@ export default function Docs() {
               {docSection === "2fa" && <TwoFactorDoc />}
               {docSection === "otp" && <OtpDoc />}
               {docSection === "social" && <SocialDoc />}
+              {docSection === "oidc" && <OidcDoc />}
             </CardContent>
           </Card>
         </div>

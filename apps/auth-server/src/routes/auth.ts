@@ -1,10 +1,12 @@
 import { Hono } from "hono";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { z } from "zod";
-import { AuthService } from "@authgate/auth";
+import { AuthService, SamlService } from "@authgate/auth";
 import { SessionService } from "@authgate/session";
 import { Env } from "../types";
 import { env } from "../env";
+
+const samlService = new SamlService();
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -498,7 +500,71 @@ export function createAuthRouter(
       path: "/",
     });
 
-    const targetOrigin = env.ALLOWED_ORIGINS?.split(",")[0]?.trim() || "http://localhost:5173";
+    const targetOrigin = (env.ALLOWED_ORIGINS || "http://localhost:5173").split(",")[0].trim();
+    return c.redirect(targetOrigin);
+  });
+
+  /**
+   * SAML 2.0 SP XML Metadata
+   */
+  router.get("/saml/metadata", (c) => {
+    const url = new URL(c.req.url);
+    const xml = samlService.getSpMetadata(url.origin);
+    return c.text(xml, 200, { "Content-Type": "application/xml" });
+  });
+
+  /**
+   * Initiate SAML AuthnRequest SSO redirect
+   */
+  router.post("/saml/sso", async (c) => {
+    const body = await c.req.json();
+    const ssoUrl = body.ssoUrl || "https://saml.example.com/sso";
+    const url = new URL(c.req.url);
+    const redirectUrl = samlService.createAuthnRequestUrl(ssoUrl, `${url.origin}/api/auth/saml/metadata`);
+
+    return c.json({
+      success: true,
+      data: { redirectUrl },
+    });
+  });
+
+  /**
+   * SAML Assertion Consumer Service (ACS) endpoint
+   */
+  router.post("/saml/acs", async (c) => {
+    let samlResponseBase64 = "";
+    const contentType = c.req.header("content-type") || "";
+    if (contentType.includes("application/x-www-form-urlencoded")) {
+      const body: any = await c.req.parseBody();
+      samlResponseBase64 = body.SAMLResponse || "";
+    } else {
+      const body = await c.req.json().catch(() => ({}));
+      samlResponseBase64 = body.SAMLResponse || "";
+    }
+
+    if (!samlResponseBase64) {
+      return c.json({
+        success: false,
+        error: { code: "BAD_REQUEST", message: "Missing SAMLResponse parameter." },
+      }, 400);
+    }
+
+    const { email } = samlService.parseSamlAssertion(samlResponseBase64);
+    const user = await authService.loginOrRegisterWithSocial("saml", email, email);
+
+    const userAgent = c.req.header("user-agent");
+    const ipAddress = c.req.header("x-forwarded-for") || "127.0.0.1";
+    const session = await sessionService.createSession(user.id, userAgent, ipAddress);
+
+    setCookie(c, "authgate_session", session.token, {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: "Lax",
+      expires: session.expiresAt,
+      path: "/",
+    });
+
+    const targetOrigin = (env.ALLOWED_ORIGINS || "http://localhost:5173").split(",")[0].trim();
     return c.redirect(targetOrigin);
   });
 

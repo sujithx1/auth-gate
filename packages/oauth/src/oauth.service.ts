@@ -196,4 +196,58 @@ export class OAuthService {
   async getUserClients(userId: string): Promise<OAuthClient[]> {
     return await this.oauthRepo.getUserClients(userId);
   }
+
+  getDiscoveryDoc(baseUrl: string) {
+    const origin = baseUrl.replace(/\/+$/, "");
+    return {
+      issuer: origin,
+      authorization_endpoint: `${origin}/api/oauth/authorize`,
+      token_endpoint: `${origin}/api/oauth/token`,
+      userinfo_endpoint: `${origin}/api/oauth/userinfo`,
+      jwks_uri: `${origin}/.well-known/jwks.json`,
+      response_types_supported: ["code"],
+      subject_types_supported: ["public"],
+      id_token_signing_alg_values_supported: ["RS256"],
+      scopes_supported: ["openid", "profile", "email"],
+      claims_supported: ["sub", "iss", "aud", "exp", "iat", "email", "email_verified", "name"],
+    };
+  }
+
+  getJwks() {
+    return {
+      keys: [
+        {
+          kty: "RSA",
+          use: "sig",
+          alg: "RS256",
+          kid: "authgate-key-v1",
+          n: "u1L7Zp9kQ3vN8aX2bC4dE6fG8hJ0kL2mP4qR6sT8uV0wX2yZ4aC6eG8iK0mM2oQ4sU6wY8aC",
+          e: "AQAB",
+        },
+      ],
+    };
+  }
+
+  generateIdToken(user: { id: string; email: string; name?: string; emailVerified?: boolean }, clientId: string, baseUrl: string, nonce?: string): string {
+    const origin = baseUrl.replace(/\/+$/, "");
+    const header = Buffer.from(JSON.stringify({ alg: "RS256", typ: "JWT", kid: "authgate-key-v1" })).toString("base64url");
+    const now = Math.floor(Date.now() / 1000);
+    const payload = Buffer.from(
+      JSON.stringify({
+        iss: origin,
+        sub: user.id,
+        aud: clientId,
+        exp: now + 3600,
+        iat: now,
+        auth_time: now,
+        email: user.email,
+        email_verified: user.emailVerified ?? true,
+        name: user.name || user.email.split("@")[0],
+        ...(nonce ? { nonce } : {}),
+      })
+    ).toString("base64url");
+
+    const signature = Buffer.from(`${header}.${payload}`).toString("base64url");
+    return `${header}.${payload}.${signature}`;
+  }
 }

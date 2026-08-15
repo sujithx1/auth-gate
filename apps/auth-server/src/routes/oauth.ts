@@ -163,12 +163,18 @@ export function createOAuthRouter(
         parsed.code_verifier
       );
 
+      const url = new URL(c.req.url);
+      const idToken = token.scope?.includes("openid")
+        ? oauthService.generateIdToken({ id: token.userId, email: `user_${token.userId.substring(0, 6)}@example.com` }, parsed.client_id, url.origin)
+        : undefined;
+
       return c.json({
         access_token: token.accessToken,
         token_type: "Bearer",
         expires_in: 3600,
         refresh_token: token.refreshToken,
         scope: token.scope,
+        ...(idToken ? { id_token: idToken } : {}),
       });
     }
 
@@ -189,12 +195,18 @@ export function createOAuthRouter(
         parsed.client_secret
       );
 
+      const url = new URL(c.req.url);
+      const idToken = token.scope?.includes("openid")
+        ? oauthService.generateIdToken({ id: token.userId, email: `user_${token.userId.substring(0, 6)}@example.com` }, parsed.client_id, url.origin)
+        : undefined;
+
       return c.json({
         access_token: token.accessToken,
         token_type: "Bearer",
         expires_in: 3600,
         refresh_token: token.refreshToken,
         scope: token.scope,
+        ...(idToken ? { id_token: idToken } : {}),
       });
     }
 
@@ -205,6 +217,19 @@ export function createOAuthRouter(
         message: "The requested grant type is not supported.",
       },
     }, 400);
+  });
+
+  /**
+   * OIDC UserInfo Endpoint.
+   */
+  router.get("/userinfo", authMiddleware, async (c) => {
+    const user = c.get("user");
+    return c.json({
+      sub: user.id,
+      email: user.email,
+      email_verified: user.emailVerified ?? true,
+      name: user.name || user.email.split("@")[0],
+    });
   });
 
   return router;

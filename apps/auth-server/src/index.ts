@@ -94,6 +94,15 @@ const orgRouter = createOrganizationRouter(orgService, authMiddleware);
 const rbacRouter = createRbacRouter(rbacService, authMiddleware, permissionMiddleware);
 const oauthRouter = createOAuthRouter(oauthService, authMiddleware);
 
+app.get("/.well-known/openid-configuration", (c) => {
+  const url = new URL(c.req.url);
+  return c.json(oauthService.getDiscoveryDoc(url.origin));
+});
+
+app.get("/.well-known/jwks.json", (c) => {
+  return c.json(oauthService.getJwks());
+});
+
 app.route("/api/auth", authRouter);
 app.route("/api/orgs", orgRouter);
 app.route("/api/rbac", rbacRouter);
