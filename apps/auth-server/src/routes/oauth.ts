@@ -227,8 +227,8 @@ export function createOAuthRouter(
     return c.json({
       sub: user.id,
       email: user.email,
-      email_verified: user.emailVerified ?? true,
-      name: user.name || user.email.split("@")[0],
+      email_verified: user.isEmailVerified ?? true,
+      name: (user as any).name || user.email.split("@")[0],
     });
   });
 
