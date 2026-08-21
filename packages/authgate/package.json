@@ -1,10 +1,30 @@
 {
   "name": "@sujithx/authgate",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "private": false,
+  "description": "Official TypeScript / JavaScript SDK for AuthGate — The modern IAM platform.",
+  "keywords": [
+    "auth",
+    "authentication",
+    "authorization",
+    "iam",
+    "oauth",
+    "oidc",
+    "sso",
+    "saml",
+    "totp",
+    "jwt",
+    "rbac"
+  ],
+  "author": "Sujith",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sujithx1/authgate.git"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
