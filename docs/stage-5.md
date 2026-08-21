@@ -68,7 +68,7 @@ graph TD
 ## 3. OIDC Standard Endpoints
 
 ### A. OpenID Provider Discovery (`GET /.well-known/openid-configuration`)
-Returns standard OIDC metadata enabling zero-config integration for NextAuth, OIDC clients, and third-party frameworks:
+Returns standard OIDC metadata enabling zero-config integration for OIDC client SDKs and third-party applications:
 ```json
 {
   "issuer": "http://localhost:3003",

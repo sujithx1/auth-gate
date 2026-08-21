@@ -11,7 +11,7 @@ export function OidcDoc() {
       <div className="space-y-4">
         <h3 className="text-base font-semibold">1. OpenID Connect Discovery</h3>
         <p className="text-xs text-muted-foreground">
-          Standard OIDC clients like NextAuth.js or Keycloak automatically discover endpoints via the standard metadata URL:
+          Standard OIDC client SDKs and applications automatically discover endpoints via the standard metadata URL:
         </p>
         <div className="p-3 bg-muted rounded-lg border border-border">
           <code className="text-xs font-mono select-all text-primary block">

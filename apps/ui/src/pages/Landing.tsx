@@ -266,15 +266,13 @@ export default function Landing({ onGoToConsole }: LandingProps) {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center space-y-8">
           
           {/* Announcement Pill */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-secondary border border-border text-xs font-medium text-muted-foreground shadow-xs hover:border-emerald-500/40 transition-all cursor-pointer">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-            <span>AuthGate Stage 3 Released — Better-Auth Architecture for Bun & Node</span>
-            <ArrowRight className="w-3 h-3 text-muted-foreground" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium mb-6 animate-pulse select-none">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>AuthGate Stage 5 Released — Enterprise IAM Architecture for Bun & Node</span>
           </div>
 
-          {/* Main Title */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.15] max-w-4xl mx-auto">
-            The open-source <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500">Better-Auth engine</span> for modern apps
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight max-w-4xl text-foreground leading-[1.1]">
+            The open-source <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500">AuthGate IAM engine</span> for modern apps
           </h1>
 
           {/* Subtitle */}
