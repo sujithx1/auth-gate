@@ -54,4 +54,33 @@ describe("OAuthService", () => {
     expect(tokens.accessToken).toBeDefined();
     expect(tokens.refreshToken).toBeDefined();
   });
+
+  it("should generate standard OIDC discovery metadata and JWKS key set", () => {
+    const discovery = oauthService.getDiscoveryDoc("http://localhost:3003");
+    expect(discovery.issuer).toBe("http://localhost:3003");
+    expect(discovery.authorization_endpoint).toBe("http://localhost:3003/api/oauth/authorize");
+    expect(discovery.token_endpoint).toBe("http://localhost:3003/api/oauth/token");
+    expect(discovery.userinfo_endpoint).toBe("http://localhost:3003/api/oauth/userinfo");
+    expect(discovery.jwks_uri).toBe("http://localhost:3003/.well-known/jwks.json");
+
+    const jwks = oauthService.getJwks();
+    expect(jwks.keys).toHaveLength(1);
+    expect(jwks.keys[0].kty).toBe("RSA");
+    expect(jwks.keys[0].alg).toBe("RS256");
+  });
+
+  it("should generate a valid signed OIDC ID token JWT", () => {
+    const user = { id: "user_123", email: "developer@example.com", name: "Jane" };
+    const idToken = oauthService.generateIdToken(user, "client_456", "http://localhost:3003");
+
+    expect(idToken).toBeDefined();
+    const parts = idToken.split(".");
+    expect(parts).toHaveLength(3);
+
+    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf-8"));
+    expect(payload.sub).toBe("user_123");
+    expect(payload.aud).toBe("client_456");
+    expect(payload.email).toBe("developer@example.com");
+    expect(payload.iss).toBe("http://localhost:3003");
+  });
 });

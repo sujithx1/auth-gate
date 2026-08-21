@@ -38,9 +38,9 @@ export class SamlService {
     const decoded = Buffer.from(samlResponseBase64, "base64").toString("utf-8");
 
     // Extract email from SAML Assertion NameID or AttributeStatement
-    const nameIdMatch = decoded.match(/<saml:NameID[^>]*>([^<]+)<\/saml:NameID>/i) || decoded.match(/<NameID[^>]*>([^<]+)<\/NameID>/i);
-    const emailAttrMatch = decoded.match(/Name="(?:email|emailAddress|mail)"[^>]*>\s*<saml:AttributeValue[^>]*>([^<]+)<\/saml:AttributeValue>/i);
-    const nameAttrMatch = decoded.match(/Name="(?:name|displayName)"[^>]*>\s*<saml:AttributeValue[^>]*>([^<]+)<\/saml:AttributeValue>/i);
+    const nameIdMatch = decoded.match(/<(?:[a-zA-Z0-9_]+:)?NameID[^>]*>([^<]+)<\/(?:[a-zA-Z0-9_]+:)?NameID>/i);
+    const emailAttrMatch = decoded.match(/Name="(?:email|emailAddress|mail)"[^>]*>\s*<(?:[a-zA-Z0-9_]+:)?AttributeValue[^>]*>([^<]+)<\/(?:[a-zA-Z0-9_]+:)?AttributeValue>/i);
+    const nameAttrMatch = decoded.match(/Name="(?:name|displayName)"[^>]*>\s*<(?:[a-zA-Z0-9_]+:)?AttributeValue[^>]*>([^<]+)<\/(?:[a-zA-Z0-9_]+:)?AttributeValue>/i);
 
     const email = emailAttrMatch?.[1] || nameIdMatch?.[1];
     if (!email) {
