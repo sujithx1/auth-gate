@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { BookOpen, Terminal, ShieldCheck, Shield, Cpu, Laptop, KeyRound } from "lucide-react";
+import { BookOpen, Terminal, ShieldCheck, Shield, Cpu, Laptop, KeyRound, Building2, Key } from "lucide-react";
 import { Card, CardContent } from "../components/ui/card";
 import { IntroDoc } from "../components/docs/IntroDoc";
 import { SetupDoc } from "../components/docs/SetupDoc";
 import { CredentialsDoc } from "../components/docs/CredentialsDoc";
+import { OrgDoc } from "../components/docs/OrgDoc";
+import { OAuthClientDoc } from "../components/docs/OAuthClientDoc";
 import { TwoFactorDoc } from "../components/docs/TwoFactorDoc";
 import { OtpDoc } from "../components/docs/OtpDoc";
 import { SocialDoc } from "../components/docs/SocialDoc";
@@ -35,6 +37,8 @@ export default function Docs() {
             { id: "intro", title: "Introduction", icon: BookOpen },
             { id: "setup", title: "Getting Started", icon: Terminal },
             { id: "credentials", title: "Credentials Login", icon: ShieldCheck },
+            { id: "orgs", title: "Organizations & RBAC", icon: Building2 },
+            { id: "oauth", title: "OAuth 2.1 Apps & PKCE", icon: Key },
             { id: "2fa", title: "Multi-Factor Auth (2FA)", icon: Shield },
             { id: "otp", title: "Decoupled OTP Mediator", icon: Cpu },
             { id: "social", title: "Social Logins", icon: Laptop },
@@ -65,6 +69,8 @@ export default function Docs() {
               {docSection === "intro" && <IntroDoc />}
               {docSection === "setup" && <SetupDoc />}
               {docSection === "credentials" && <CredentialsDoc />}
+              {docSection === "orgs" && <OrgDoc />}
+              {docSection === "oauth" && <OAuthClientDoc />}
               {docSection === "2fa" && <TwoFactorDoc />}
               {docSection === "otp" && <OtpDoc />}
               {docSection === "social" && <SocialDoc />}
