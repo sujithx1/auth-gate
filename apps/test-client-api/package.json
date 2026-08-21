@@ -1,0 +1,16 @@
+{
+  "name": "test-client-api",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@sujithx/authgate": "^1.0.5",
+    "hono": "^4.13.3"
+  }
+}
