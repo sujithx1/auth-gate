@@ -29,8 +29,8 @@ function App() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { user } = await authClient.login(email, password);
-      setSession(user);
+      const { data } = await authClient.login(email, password);
+      setSession(data.user);
       alert('Login Successful!');
     } catch (error: any) {
       alert('Login Failed: ' + error.message);
