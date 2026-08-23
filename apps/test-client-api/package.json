@@ -9,6 +9,9 @@
   "peerDependencies": {
     "typescript": "^5"
   },
+  "scripts": {
+    "dev": "bun run src/index.ts"
+  },
   "dependencies": {
     "@sujithx/authgate": "^1.0.5",
     "hono": "^4.13.3"
