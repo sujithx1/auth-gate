@@ -40,6 +40,7 @@ const sessionService = new SessionService(authGate.database.sessions);
 // 2. Initialize Hono App
 const app = new Hono<Env>();
 
+app.get('/health', (c) => c.json({ success: true, message: "AuthServer is running" }))
 app.use("*", cors({
   origin: ["http://localhost:5173", "http://localhost:5174"],
   allowHeaders: ["Authorization", "Content-Type", "Cookie"],
@@ -109,7 +110,7 @@ app.route("/api/rbac", rbacRouter);
 app.route("/api/oauth", oauthRouter);
 
 console.log(`🚀 AuthServer running on http://localhost:${env.PORT}`);
-
+console.log("sujith")
 export default {
   port: env.PORT,
   fetch: app.fetch,
