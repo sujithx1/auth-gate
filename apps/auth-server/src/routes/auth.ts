@@ -371,7 +371,11 @@ export function createAuthRouter(
     const code = c.req.query("code");
     if (!code) return c.text("Authorization code missing.", 400);
 
-    const redirectUri = c.req.url.split("?")[0];
+    let redirectUri = c.req.url.split("?")[0];
+    const forwardedProto = c.req.header("x-forwarded-proto");
+    if (forwardedProto === "https" || env.NODE_ENV === "production") {
+      redirectUri = redirectUri.replace(/^http:/, "https:");
+    }
 
     // Exchange token
     const payload = {
