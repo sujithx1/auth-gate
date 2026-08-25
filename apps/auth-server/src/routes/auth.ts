@@ -123,7 +123,7 @@ export function createAuthRouter(
     setCookie(c, "authgate_session", session.token, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "Lax",
+      sameSite: env.NODE_ENV === "production" ? "None" : "Lax",
       expires: session.expiresAt,
       path: "/",
     });
@@ -295,7 +295,7 @@ export function createAuthRouter(
     setCookie(c, "authgate_session", session.token, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "Lax",
+      sameSite: env.NODE_ENV === "production" ? "None" : "Lax",
       expires: session.expiresAt,
       path: "/",
     });
@@ -419,7 +419,7 @@ export function createAuthRouter(
     setCookie(c, "authgate_session", session.token, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "Lax",
+      sameSite: env.NODE_ENV === "production" ? "None" : "Lax",
       expires: session.expiresAt,
       path: "/",
     });
@@ -507,7 +507,7 @@ export function createAuthRouter(
     setCookie(c, "authgate_session", session.token, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "Lax",
+      sameSite: env.NODE_ENV === "production" ? "None" : "Lax",
       expires: session.expiresAt,
       path: "/",
     });
@@ -571,7 +571,7 @@ export function createAuthRouter(
     setCookie(c, "authgate_session", session.token, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "Lax",
+      sameSite: env.NODE_ENV === "production" ? "None" : "Lax",
       expires: session.expiresAt,
       path: "/",
     });
@@ -694,7 +694,7 @@ export function createAuthRouter(
     setCookie(c, "authgate_session", session.token, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "Lax",
+      sameSite: env.NODE_ENV === "production" ? "None" : "Lax",
       expires: session.expiresAt,
       path: "/",
     });
