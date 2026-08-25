@@ -42,7 +42,7 @@ const app = new Hono<Env>();
 
 app.get('/health', (c) => c.json({ success: true, message: "AuthServer is running" }))
 app.use("*", cors({
-  origin: ["http://localhost:5173", "http://localhost:5174"],
+  origin: env.ALLOWED_ORIGINS.split(","),
   allowHeaders: ["Authorization", "Content-Type", "Cookie"],
   exposeHeaders: ["Content-Length"],
   credentials: true,

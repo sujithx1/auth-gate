@@ -349,7 +349,15 @@ export function createAuthRouter(
     if (!env.GOOGLE_CLIENT_ID) {
       return c.redirect("/api/auth/social/mock-consent?provider=google");
     }
-    const redirectUri = `${c.req.url.split("?")[0]}/callback`;
+    let redirectUri = `${c.req.url.split("?")[0]}/callback`;
+    
+    // If behind a proxy (like Nginx or Cloudflare) that terminates SSL, 
+    // force the protocol to match the original request, or force HTTPS in production.
+    const forwardedProto = c.req.header("x-forwarded-proto");
+    if (forwardedProto === "https" || env.NODE_ENV === "production") {
+      redirectUri = redirectUri.replace(/^http:/, "https:");
+    }
+
     const returnTo = c.req.query("redirect_url") || c.req.header("referer");
     const state = returnTo ? encodeURIComponent(returnTo) : "google-state";
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${env.GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20profile%20email&state=${state}`;

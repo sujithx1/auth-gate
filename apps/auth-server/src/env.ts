@@ -4,7 +4,7 @@ import { z } from "zod";
 export const env = createEnv({
   server: {
     PORT: z.string().transform((v) => parseInt(v, 10)).default("3005"),
-    DATABASE_URL: z.string().url().default("postgres://postgres:postgres@localhost:5432/authgate"),
+    DATABASE_URL: z.string().url(),
     ALLOWED_ORIGINS: z.string().default("http://localhost:5173"),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     GOOGLE_CLIENT_ID: z.string().optional(),
