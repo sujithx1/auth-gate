@@ -12,6 +12,7 @@ out/
 .env
 .env.local
 .env.*.local
+.vm.env
 
 # Logs
 *.log
@@ -23,3 +24,5 @@ lerna-debug.log*
 # System Files
 .DS_Store
 Thumbs.db
+
+deploy-auth-server.sh
