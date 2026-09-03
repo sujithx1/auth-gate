@@ -3,7 +3,7 @@ import { AuthGateClient } from '@sujithx/authgate'
 
 // Initialize the AuthGate Client SDK to point to your running AuthGate Server
 const authClient = new AuthGateClient({
-  baseUrl: 'http://localhost:3003' 
+  baseUrl: import.meta.env.VITE_AUTHGATE_URL || 'http://localhost:3000' 
 });
 
 function App() {
@@ -53,8 +53,9 @@ function App() {
   // 5. Test Authenticated Backend Request
   const handleTestBackend = async () => {
     try {
-      // Assuming test-client-api runs on 3004
-      const response = await fetch("http://localhost:3004/api/protected");
+      // Assuming test-client-api runs on 3004 by default
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3004";
+      const response = await fetch(`${apiUrl}/api/protected`);
       const data = await response.json();
       alert("Backend Response: " + JSON.stringify(data));
     } catch (err: any) {

@@ -12,7 +12,7 @@ app.use("/*", cors({
 
 // Initialize the AuthGate SDK to verify tokens against the central IAM server
 const authClient = new AuthGateClient({
-  baseUrl: "http://localhost:3003",
+  baseUrl: process.env.AUTHGATE_URL || "http://localhost:3000",
 });
 
 app.get("/", (c) => c.json({ status: "API is running" }));
@@ -42,6 +42,6 @@ app.get("/api/protected", async (c) => {
 });
 
 export default {
-  port: 3004,
+  port: process.env.PORT ? parseInt(process.env.PORT) : 3004,
   fetch: app.fetch,
 };
