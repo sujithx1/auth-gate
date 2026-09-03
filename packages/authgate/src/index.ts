@@ -1,2 +1,8 @@
 export * from "./client";
-export * from "@authgate/shared";
+export { 
+  AuthGateError, 
+  NotFoundError, 
+  UnauthorizedError, 
+  ConflictError, 
+  ValidationError 
+} from "@authgate/shared";
