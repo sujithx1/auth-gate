@@ -3,7 +3,7 @@ import { AuthGateClient } from '@sujithx/authgate'
 
 // Initialize the AuthGate Client SDK to point to your running AuthGate Server
 const authClient = new AuthGateClient({
-  baseUrl: import.meta.env.VITE_AUTHGATE_URL || 'http://localhost:3004/api/auth' 
+  baseUrl: import.meta.env.VITE_AUTHGATE_URL || 'http://localhost:3004' 
 });
 
 function App() {
