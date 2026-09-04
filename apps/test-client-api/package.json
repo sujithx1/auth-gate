@@ -13,7 +13,11 @@
     "dev": "bun run src/index.ts"
   },
   "dependencies": {
+    "@authgate/drizzle": "workspace:*",
+    "@authgate/server": "workspace:*",
     "@sujithx/authgate": "^1.0.5",
-    "hono": "^4.13.3"
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.13.3",
+    "postgres": "^3.4.9"
   }
 }

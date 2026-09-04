@@ -1,6 +1,25 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { AuthGateClient } from "@sujithx/authgate";
+import { createAuthGateServer } from "@authgate/server";
+import { drizzleAdapter } from "@authgate/drizzle";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+
+// 1. Client connects to their own database
+const queryClient = postgres(process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/authgate");
+const db = drizzle(queryClient);
+
+// 2. Client initializes the AuthGate SDK
+const authGateApp = createAuthGateServer({
+  database: drizzleAdapter(db),
+  allowedOrigins: ["http://localhost:5174", "http://localhost:5173", "http://localhost:5175"],
+  cookieOptions: {
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Lax"
+  },
+  publicUrl: process.env.AUTHGATE_URL || "http://localhost:3004"
+});
 
 const app = new Hono();
 
@@ -10,9 +29,13 @@ app.use("/*", cors({
   credentials: true,
 }));
 
-// Initialize the AuthGate SDK to verify tokens against the central IAM server
+// 3. Client mounts the AuthGate SDK routes onto their own API!
+// Now the frontend can hit http://localhost:3004/api/auth/login
+app.route("/api", authGateApp);
+
+// Initialize the AuthGate SDK to verify tokens
 const authClient = new AuthGateClient({
-  baseUrl: process.env.AUTHGATE_URL || "http://localhost:3000",
+  baseUrl: process.env.AUTHGATE_URL || "http://localhost:3004",
 });
 
 app.get("/", (c) => c.json({ status: "API is running" }));
@@ -20,16 +43,10 @@ app.get("/", (c) => c.json({ status: "API is running" }));
 // Protected route that checks the user's AuthGate session via the SDK
 app.get("/api/protected", async (c) => {
   try {
-    // Check if the user is authenticated (pass the cookie/auth header from the request)
     const cookieHeader = c.req.header("Cookie");
     if (!cookieHeader) {
       return c.json({ error: "Unauthorized", message: "No session cookie found" }, 401);
     }
-
-    // In a real scenario, you'd pass the session token or headers to the authClient to verify
-    // Since AuthGate uses HttpOnly cookies, we just need to ensure the request from the browser
-    // to the main auth server is authenticated. 
-    // Here we're just simulating a backend check.
     
     return c.json({
       message: "You have accessed a protected resource!",
