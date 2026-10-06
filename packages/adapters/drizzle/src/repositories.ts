@@ -25,6 +25,8 @@ import {
   OtpRepository,
   SocialAccount,
   SocialAccountRepository,
+  SamlProvider,
+  SamlProviderRepository,
 } from "@authgate/core";
 import * as schema from "./schema";
 
@@ -500,5 +502,55 @@ export class DrizzleSocialAccountRepository implements SocialAccountRepository {
 
   async delete(id: string): Promise<void> {
     await this.db.delete(schema.socialAccounts).where(eq(schema.socialAccounts.id, id));
+  }
+}
+
+export class DrizzleSamlProviderRepository implements SamlProviderRepository {
+  constructor(private readonly db: any) {}
+
+  async findByOrganizationId(organizationId: string): Promise<SamlProvider | null> {
+    const results = await this.db
+      .select()
+      .from(schema.samlProviders)
+      .where(eq(schema.samlProviders.organizationId, organizationId))
+      .limit(1);
+    return results[0] || null;
+  }
+
+  async findById(id: string): Promise<SamlProvider | null> {
+    const results = await this.db
+      .select()
+      .from(schema.samlProviders)
+      .where(eq(schema.samlProviders.id, id))
+      .limit(1);
+    return results[0] || null;
+  }
+
+  async create(provider: Omit<SamlProvider, "id" | "createdAt" | "updatedAt">): Promise<SamlProvider> {
+    const results = await this.db
+      .insert(schema.samlProviders)
+      .values({
+        organizationId: provider.organizationId,
+        issuer: provider.issuer,
+        ssoUrl: provider.ssoUrl,
+        cert: provider.cert,
+        enabled: provider.enabled,
+        attributeMapping: provider.attributeMapping ?? {},
+      })
+      .returning();
+    return results[0];
+  }
+
+  async update(id: string, provider: Partial<Omit<SamlProvider, "id" | "createdAt" | "updatedAt">>): Promise<SamlProvider> {
+    const results = await this.db
+      .update(schema.samlProviders)
+      .set({ ...provider, updatedAt: new Date() })
+      .where(eq(schema.samlProviders.id, id))
+      .returning();
+    return results[0];
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.db.delete(schema.samlProviders).where(eq(schema.samlProviders.id, id));
   }
 }

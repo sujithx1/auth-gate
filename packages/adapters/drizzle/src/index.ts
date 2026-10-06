@@ -10,6 +10,7 @@ import {
   DrizzleTwoFactorRepository,
   DrizzleOtpRepository,
   DrizzleSocialAccountRepository,
+  DrizzleSamlProviderRepository,
 } from "./repositories";
 import * as schema from "./schema";
 
@@ -28,5 +29,6 @@ export function drizzleAdapter(db: any): DatabaseAdapter {
     twoFactor: new DrizzleTwoFactorRepository(db),
     otpCodes: new DrizzleOtpRepository(db),
     socialAccounts: new DrizzleSocialAccountRepository(db),
+    samlProviders: new DrizzleSamlProviderRepository(db),
   };
 }

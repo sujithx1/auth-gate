@@ -180,3 +180,18 @@ export const socialAccounts = pgTable("social_accounts", {
   providerUserId: varchar("provider_user_id", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const samlProviders = pgTable("saml_providers", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: uuid("organization_id")
+    .references(() => organizations.id, { onDelete: "cascade" })
+    .notNull()
+    .unique(),
+  issuer: varchar("issuer", { length: 512 }).notNull(),
+  ssoUrl: varchar("sso_url", { length: 512 }).notNull(),
+  cert: text("cert").notNull(), // X.509 public certificate from the IdP
+  enabled: boolean("enabled").default(true).notNull(),
+  attributeMapping: jsonb("attribute_mapping").$type<Record<string, string>>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
