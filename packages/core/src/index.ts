@@ -1,6 +1,7 @@
 import { DatabaseAdapter } from "./domain/repositories";
 export * from "./domain/entities";
 export * from "./domain/repositories";
+export type AuthGateDatabase = DatabaseAdapter;
 export * from "./domain/rbac";
 export * from "./domain/organization";
 export * from "./domain/oauth";

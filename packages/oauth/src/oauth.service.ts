@@ -47,7 +47,7 @@ async function getOrCreateRsaKeyPair(): Promise<RsaKeyPair> {
 }
 
 export class OAuthService {
-  private _jwks: { keys: JsonWebKey[] } | null = null;
+  private _jwks: { keys: Array<JsonWebKey & { kid?: string; use?: string; alg?: string }> } | null = null;
 
   constructor(private readonly oauthRepo: OAuthRepository) {
     // Eagerly warm up the RSA key pair in the background
