@@ -33,7 +33,7 @@ export function createAuthGateServer(config: AuthGateServerConfig) {
   const authRouter = createAuthRouter(authService, sessionService, authMiddleware, config);
   const orgRouter = createOrganizationRouter(orgService, authMiddleware, config);
   const rbacRouter = createRbacRouter(rbacService, authMiddleware, permissionMiddleware, config);
-  const oauthRouter = createOAuthRouter(oauthService, authMiddleware, config);
+  const oauthRouter = createOAuthRouter(oauthService, authMiddleware, config, config.database.users);
 
   const app = new Hono<Env>();
 

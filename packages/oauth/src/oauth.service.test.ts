@@ -69,9 +69,9 @@ describe("OAuthService", () => {
     expect(jwks.keys[0].alg).toBe("RS256");
   });
 
-  it("should generate a valid signed OIDC ID token JWT", () => {
+  it("should generate a valid signed OIDC ID token JWT", async () => {
     const user = { id: "user_123", email: "developer@example.com", name: "Jane" };
-    const idToken = oauthService.generateIdToken(user, "client_456", "http://localhost:3003");
+    const idToken = await oauthService.generateIdToken(user, "client_456", "http://localhost:3003");
 
     expect(idToken).toBeDefined();
     const parts = idToken.split(".");

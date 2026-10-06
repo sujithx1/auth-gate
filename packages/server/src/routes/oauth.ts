@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { OAuthService } from "@authgate/oauth";
+import { UserRepository } from "@authgate/core";
 import { Env, AuthGateServerConfig } from "../types";
 
 const clientRegisterSchema = z.object({
@@ -28,9 +29,9 @@ const tokenExchangeSchema = z.object({
 
 export function createOAuthRouter(
   oauthService: OAuthService,
-  authMiddleware: any
-,
-  config: AuthGateServerConfig
+  authMiddleware: any,
+  config: AuthGateServerConfig,
+  userRepo: UserRepository
 ) {
   const router = new Hono<Env>();
 
@@ -165,10 +166,19 @@ export function createOAuthRouter(
         parsed.code_verifier
       );
 
-      const url = new URL(c.req.url);
-      const idToken = token.scope?.includes("openid")
-        ? oauthService.generateIdToken({ id: token.userId, email: `user_${token.userId.substring(0, 6)}@example.com` }, parsed.client_id, url.origin)
-        : undefined;
+      let idToken: string | undefined;
+      if (token.scope?.includes("openid")) {
+        const user = await userRepo.findById(token.userId);
+        if (user) {
+          const url = new URL(c.req.url);
+          const baseUrl = config.publicUrl || url.origin;
+          idToken = await oauthService.generateIdToken(
+            { id: user.id, email: user.email, emailVerified: user.isEmailVerified },
+            parsed.client_id,
+            baseUrl
+          );
+        }
+      }
 
       return c.json({
         access_token: token.accessToken,
@@ -197,10 +207,19 @@ export function createOAuthRouter(
         parsed.client_secret
       );
 
-      const url = new URL(c.req.url);
-      const idToken = token.scope?.includes("openid")
-        ? oauthService.generateIdToken({ id: token.userId, email: `user_${token.userId.substring(0, 6)}@example.com` }, parsed.client_id, url.origin)
-        : undefined;
+      let idToken: string | undefined;
+      if (token.scope?.includes("openid")) {
+        const user = await userRepo.findById(token.userId);
+        if (user) {
+          const url = new URL(c.req.url);
+          const baseUrl = config.publicUrl || url.origin;
+          idToken = await oauthService.generateIdToken(
+            { id: user.id, email: user.email, emailVerified: user.isEmailVerified },
+            parsed.client_id,
+            baseUrl
+          );
+        }
+      }
 
       return c.json({
         access_token: token.accessToken,

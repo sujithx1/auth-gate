@@ -1,11 +1,10 @@
-import { OAuthClient, OAuthAuthorizationCode, OAuthToken, OAuthRepository } from "@authgate/core";
-import { ConflictError, NotFoundError, ValidationError, generateSecureToken } from "@authgate/shared";
+import { OAuthClient, OAuthAuthorizationCode, OAuthToken, OAuthRepository, UserRepository } from "@authgate/core";
+import { NotFoundError, ValidationError, generateSecureToken } from "@authgate/shared";
 
 async function verifyPkce(verifier: string, challenge: string, method: "plain" | "S256"): Promise<boolean> {
   if (method === "plain") {
     return verifier === challenge;
   }
-  
   const verifierBuffer = Buffer.from(verifier, "utf-8");
   const hashBuffer = await globalThis.crypto.subtle.digest("SHA-256", verifierBuffer);
   const calculatedChallenge = Buffer.from(hashBuffer)
@@ -13,12 +12,51 @@ async function verifyPkce(verifier: string, challenge: string, method: "plain" |
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
-  
   return calculatedChallenge === challenge;
 }
 
+
+// In production, persist these keys in the database (OidcKey table).
+interface RsaKeyPair {
+  privateKey: CryptoKey;
+  publicJwk: JsonWebKey;
+  kid: string;
+}
+
+let _rsaKeyPair: RsaKeyPair | null = null;
+
+async function getOrCreateRsaKeyPair(): Promise<RsaKeyPair> {
+  if (_rsaKeyPair) return _rsaKeyPair;
+
+  const keyPair = await globalThis.crypto.subtle.generateKey(
+    {
+      name: "RSASSA-PKCS1-v1_5",
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: "SHA-256",
+    },
+    true,
+    ["sign", "verify"]
+  );
+
+  const publicJwk = await globalThis.crypto.subtle.exportKey("jwk", keyPair.publicKey);
+  const kid = `authgate-key-${Date.now()}`;
+
+  _rsaKeyPair = { privateKey: keyPair.privateKey, publicJwk, kid };
+  return _rsaKeyPair;
+}
+
 export class OAuthService {
-  constructor(private readonly oauthRepo: OAuthRepository) {}
+  private _jwks: { keys: JsonWebKey[] } | null = null;
+
+  constructor(private readonly oauthRepo: OAuthRepository) {
+    // Eagerly warm up the RSA key pair in the background
+    getOrCreateRsaKeyPair().then((kp) => {
+      this._jwks = {
+        keys: [{ ...kp.publicJwk, use: "sig", alg: "RS256", kid: kp.kid }],
+      };
+    });
+  }
 
   async registerClient(
     name: string,
@@ -214,24 +252,34 @@ export class OAuthService {
   }
 
   getJwks() {
-    return {
-      keys: [
-        {
-          kty: "RSA",
-          use: "sig",
-          alg: "RS256",
-          kid: "authgate-key-v1",
-          n: "u1L7Zp9kQ3vN8aX2bC4dE6fG8hJ0kL2mP4qR6sT8uV0wX2yZ4aC6eG8iK0mM2oQ4sU6wY8aC",
-          e: "AQAB",
-        },
-      ],
-    };
+    // Return the cached JWKS (populated during construction).
+    // If keys aren't ready yet return empty set — client can retry.
+    return this._jwks ?? { keys: [] };
   }
 
-  generateIdToken(user: { id: string; email: string; name?: string; emailVerified?: boolean }, clientId: string, baseUrl: string, nonce?: string): string {
+  /**
+   * Generate a real RS256-signed OIDC ID Token JWT.
+   * The token is signed with the in-process RSA private key.
+   */
+  async generateIdToken(
+    user: { id: string; email: string; name?: string; emailVerified?: boolean },
+    clientId: string,
+    baseUrl: string,
+    nonce?: string
+  ): Promise<string> {
+    const kp = await getOrCreateRsaKeyPair();
+    // Update JWKS cache whenever we generate a token
+    this._jwks = {
+      keys: [{ ...kp.publicJwk, use: "sig", alg: "RS256", kid: kp.kid }],
+    };
+
     const origin = baseUrl.replace(/\/+$/, "");
-    const header = Buffer.from(JSON.stringify({ alg: "RS256", typ: "JWT", kid: "authgate-key-v1" })).toString("base64url");
     const now = Math.floor(Date.now() / 1000);
+
+    const header = Buffer.from(
+      JSON.stringify({ alg: "RS256", typ: "JWT", kid: kp.kid })
+    ).toString("base64url");
+
     const payload = Buffer.from(
       JSON.stringify({
         iss: origin,
@@ -247,7 +295,16 @@ export class OAuthService {
       })
     ).toString("base64url");
 
-    const signature = Buffer.from(`${header}.${payload}`).toString("base64url");
+    const signingInput = `${header}.${payload}`;
+    const signingBuffer = Buffer.from(signingInput, "utf-8");
+
+    const signatureBuffer = await globalThis.crypto.subtle.sign(
+      { name: "RSASSA-PKCS1-v1_5" },
+      kp.privateKey,
+      signingBuffer
+    );
+
+    const signature = Buffer.from(signatureBuffer).toString("base64url");
     return `${header}.${payload}.${signature}`;
   }
 }
