@@ -53,3 +53,15 @@ export interface SocialAccount {
   providerUserId: string;
   createdAt: Date;
 }
+
+export interface SamlProvider {
+  id: string;
+  organizationId: string;
+  issuer: string;
+  ssoUrl: string;
+  cert: string;
+  enabled: boolean;
+  attributeMapping?: Record<string, string>;
+  createdAt: Date;
+  updatedAt: Date;
+}

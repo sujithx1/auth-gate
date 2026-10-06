@@ -6,6 +6,7 @@ import {
   TwoFactorSecret,
   OtpCode,
   SocialAccount,
+  SamlProvider,
 } from "../domain/entities";
 
 import {
@@ -15,6 +16,7 @@ import {
   TwoFactorRepository,
   OtpRepository,
   SocialAccountRepository,
+  SamlProviderRepository,
   DatabaseAdapter,
 } from "../domain/repositories";
 
@@ -484,6 +486,41 @@ export class InMemorySocialAccountRepository implements SocialAccountRepository 
   }
 }
 
+export class InMemorySamlProviderRepository implements SamlProviderRepository {
+  public providers: Map<string, SamlProvider> = new Map();
+
+  async findByOrganizationId(organizationId: string): Promise<SamlProvider | null> {
+    for (const p of this.providers.values()) {
+      if (p.organizationId === organizationId) return p;
+    }
+    return null;
+  }
+
+  async findById(id: string): Promise<SamlProvider | null> {
+    return this.providers.get(id) || null;
+  }
+
+  async create(provider: Omit<SamlProvider, "id" | "createdAt" | "updatedAt">): Promise<SamlProvider> {
+    const id = crypto.randomUUID();
+    const now = new Date();
+    const created: SamlProvider = { ...provider, id, createdAt: now, updatedAt: now };
+    this.providers.set(id, created);
+    return created;
+  }
+
+  async update(id: string, provider: Partial<Omit<SamlProvider, "id" | "createdAt" | "updatedAt">>): Promise<SamlProvider> {
+    const existing = this.providers.get(id);
+    if (!existing) throw new Error("SamlProvider not found");
+    const updated = { ...existing, ...provider, updatedAt: new Date() };
+    this.providers.set(id, updated);
+    return updated;
+  }
+
+  async delete(id: string): Promise<void> {
+    this.providers.delete(id);
+  }
+}
+
 export function createInMemoryAdapter(): DatabaseAdapter {
   return {
     users: new InMemoryUserRepository(),
@@ -496,5 +533,6 @@ export function createInMemoryAdapter(): DatabaseAdapter {
     twoFactor: new InMemoryTwoFactorRepository(),
     otpCodes: new InMemoryOtpRepository(),
     socialAccounts: new InMemorySocialAccountRepository(),
+    samlProviders: new InMemorySamlProviderRepository(),
   };
 }

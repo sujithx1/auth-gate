@@ -1,4 +1,4 @@
-import { User, Session, VerificationToken, VerificationTokenType, TwoFactorSecret, OtpCode, SocialAccount } from "./entities";
+import { User, Session, VerificationToken, VerificationTokenType, TwoFactorSecret, OtpCode, SocialAccount, SamlProvider } from "./entities";
 import { RoleRepository } from "./rbac";
 import { OrganizationRepository, InvitationRepository } from "./organization";
 import { OAuthRepository } from "./oauth";
@@ -48,6 +48,14 @@ export interface SocialAccountRepository {
   delete(id: string): Promise<void>;
 }
 
+export interface SamlProviderRepository {
+  findByOrganizationId(organizationId: string): Promise<SamlProvider | null>;
+  findById(id: string): Promise<SamlProvider | null>;
+  create(provider: Omit<SamlProvider, "id" | "createdAt" | "updatedAt">): Promise<SamlProvider>;
+  update(id: string, provider: Partial<Omit<SamlProvider, "id" | "createdAt" | "updatedAt">>): Promise<SamlProvider>;
+  delete(id: string): Promise<void>;
+}
+
 export interface DatabaseAdapter {
   users: UserRepository;
   sessions: SessionRepository;
@@ -59,4 +67,5 @@ export interface DatabaseAdapter {
   twoFactor: TwoFactorRepository;
   otpCodes: OtpRepository;
   socialAccounts: SocialAccountRepository;
+  samlProviders: SamlProviderRepository;
 }
