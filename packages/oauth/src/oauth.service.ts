@@ -1,10 +1,15 @@
 import { OAuthClient, OAuthAuthorizationCode, OAuthToken, OAuthRepository, UserRepository } from "@authgate/core";
+import { timingSafeEqual } from "crypto";
 import { NotFoundError, ValidationError, generateSecureToken } from "@authgate/shared";
 
+function safeEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  return ab.length === bb.length && timingSafeEqual(ab, bb);
+}
+
 async function verifyPkce(verifier: string, challenge: string, method: "plain" | "S256"): Promise<boolean> {
-  if (method === "plain") {
-    return verifier === challenge;
-  }
+  if (method !== "S256") return false;
   const verifierBuffer = Buffer.from(verifier, "utf-8");
   const hashBuffer = await globalThis.crypto.subtle.digest("SHA-256", verifierBuffer);
   const calculatedChallenge = Buffer.from(hashBuffer)
@@ -12,7 +17,7 @@ async function verifyPkce(verifier: string, challenge: string, method: "plain" |
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
-  return calculatedChallenge === challenge;
+  return safeEqual(calculatedChallenge, challenge);
 }
 
 
@@ -106,6 +111,10 @@ export class OAuthService {
     codeChallengeMethod: "plain" | "S256",
     scope?: string
   ): Promise<string> {
+    if (codeChallengeMethod !== "S256" || !codeChallenge) {
+      throw new ValidationError("PKCE with code_challenge_method S256 is required.");
+    }
+
     const code = generateSecureToken(24);
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 10); // 10 minutes expiry
@@ -135,8 +144,10 @@ export class OAuthService {
       throw new ValidationError("Authorization code is invalid or expired.");
     }
 
+    // Codes are single-use: consume immediately, whatever the outcome.
+    await this.oauthRepo.deleteAuthorizationCode(code);
+
     if (new Date() > new Date(authCode.expiresAt)) {
-      await this.oauthRepo.deleteAuthorizationCode(code);
       throw new ValidationError("Authorization code has expired.");
     }
 
@@ -150,16 +161,7 @@ export class OAuthService {
       throw new ValidationError("PKCE code verifier check failed.");
     }
 
-    // If client secret is provided, verify it (for confidential clients)
-    const client = await this.oauthRepo.findClientById(clientId);
-    if (client && client.clientSecret && clientSecret) {
-      if (client.clientSecret !== clientSecret) {
-        throw new ValidationError("Client secret verification failed.");
-      }
-    }
-
-    // Clean up code
-    await this.oauthRepo.deleteAuthorizationCode(code);
+    await this.authenticateClient(clientId, clientSecret);
 
     // Issue tokens
     const accessToken = generateSecureToken(32);
@@ -200,12 +202,7 @@ export class OAuthService {
       throw new ValidationError("Client identification mismatch.");
     }
 
-    const client = await this.oauthRepo.findClientById(clientId);
-    if (client && client.clientSecret && clientSecret) {
-      if (client.clientSecret !== clientSecret) {
-        throw new ValidationError("Client secret verification failed.");
-      }
-    }
+    await this.authenticateClient(clientId, clientSecret);
 
     // Revoke old tokens
     await this.oauthRepo.deleteToken(token.accessToken);
@@ -229,6 +226,24 @@ export class OAuthService {
       refreshExpiresAt,
       scope: token.scope,
     });
+  }
+
+  private async authenticateClient(clientId: string, clientSecret: string | undefined): Promise<OAuthClient> {
+    const client = await this.oauthRepo.findClientById(clientId);
+    if (!client || !clientSecret || !safeEqual(client.clientSecret, clientSecret)) {
+      throw new ValidationError("Client authentication failed.");
+    }
+    return client;
+  }
+
+  /**
+   * Resolves a Bearer access token to its stored token record, or null if
+   * unknown/expired.
+   */
+  async validateAccessToken(accessToken: string): Promise<OAuthToken | null> {
+    const token = await this.oauthRepo.findTokenByAccessToken(accessToken);
+    if (!token || new Date() > new Date(token.expiresAt)) return null;
+    return token;
   }
 
   async getUserClients(userId: string): Promise<OAuthClient[]> {

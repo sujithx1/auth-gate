@@ -14,7 +14,7 @@ const approveSchema = z.object({
   clientId: z.string(),
   redirectUri: z.string().url(),
   codeChallenge: z.string(),
-  codeChallengeMethod: z.enum(["plain", "S256"]),
+  codeChallengeMethod: z.literal("S256"),
   scope: z.string().optional(),
 });
 
@@ -243,8 +243,15 @@ export function createOAuthRouter(
   /**
    * OIDC UserInfo Endpoint.
    */
-  router.get("/userinfo", authMiddleware, async (c) => {
-    const user = c.get("user");
+  router.get("/userinfo", async (c) => {
+    const bearer = c.req.header("authorization")?.match(/^Bearer (.+)$/i)?.[1];
+    const token = bearer ? await oauthService.validateAccessToken(bearer) : null;
+    const user = token ? await userRepo.findById(token.userId) : null;
+    if (!user) {
+      return c.json({ success: false, error: { code: "INVALID_TOKEN", message: "Missing or invalid access token." } }, 401, {
+        "WWW-Authenticate": 'Bearer error="invalid_token"',
+      });
+    }
     return c.json({
       sub: user.id,
       email: user.email,

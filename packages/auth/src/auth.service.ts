@@ -15,6 +15,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from "@authgate/shared";
+import { randomInt } from "crypto";
 import { generateTotpSecret, verifyTotpToken } from "./totp";
 
 export class AuthService {
@@ -73,6 +74,8 @@ export class AuthService {
     const normalizedEmail = email.toLowerCase().trim();
     const user = await this.userRepo.findByEmail(normalizedEmail);
     if (!user) {
+      // Burn comparable time so response timing does not reveal unknown emails.
+      await hashPassword(password);
       throw new UnauthorizedError("Invalid email or password.", "INVALID_CREDENTIALS");
     }
 
@@ -294,7 +297,7 @@ export class AuthService {
     // Generate numeric code
     let code = "";
     for (let i = 0; i < length; i++) {
-      code += Math.floor(Math.random() * 10).toString();
+      code += randomInt(0, 10).toString();
     }
 
     const hashed = await hashPassword(code);

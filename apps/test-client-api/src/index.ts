@@ -18,6 +18,7 @@ const authGateApp = createAuthGateServer({
     secure: process.env.NODE_ENV === "production",
     sameSite: "Lax"
   },
+  devMode: process.env.NODE_ENV !== "production",
   publicUrl: process.env.AUTHGATE_URL || "http://localhost:3004"
 });
 

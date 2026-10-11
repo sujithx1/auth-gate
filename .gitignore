@@ -28,3 +28,4 @@ Thumbs.db
 *.tsbuildinfo
 
 deploy-auth-server.sh
+auth-server-linux

@@ -83,4 +83,20 @@ describe("OAuthService", () => {
     expect(payload.email).toBe("developer@example.com");
     expect(payload.iss).toBe("http://localhost:3003");
   });
+
+  it("should reject plain PKCE, missing client secret and code replay", async () => {
+    const userId = crypto.randomUUID();
+    const client = await oauthService.registerClient("App", ["http://localhost:8000/callback"], ["authorization_code"], userId);
+    const challenge = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM";
+    const verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
+
+    expect(
+      oauthService.createAuthorizationCode(client.clientId, userId, "http://localhost:8000/callback", "x", "plain")
+    ).rejects.toThrow();
+
+    const code = await oauthService.createAuthorizationCode(client.clientId, userId, "http://localhost:8000/callback", challenge, "S256");
+    expect(oauthService.exchangeCodeForToken(code, client.clientId, undefined, verifier)).rejects.toThrow();
+    // Code was consumed by the failed attempt
+    expect(oauthService.exchangeCodeForToken(code, client.clientId, client.clientSecret, verifier)).rejects.toThrow();
+  });
 });

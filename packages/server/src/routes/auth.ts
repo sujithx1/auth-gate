@@ -3,9 +3,29 @@ import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { z } from "zod";
 import { AuthService, SamlService } from "@authgate/auth";
 import { SessionService } from "@authgate/session";
+import { AuthGateError } from "@authgate/shared";
 import { Env, AuthGateServerConfig } from "../types";
 
 const samlService = new SamlService();
+
+// Simple in-memory fixed-window rate limiter for sensitive endpoints.
+function createRateLimiter(max: number, windowMs: number) {
+  const hits = new Map<string, { count: number; resetAt: number }>();
+  return async (c: any, next: () => Promise<void>) => {
+    const ip = (c.req.header("x-forwarded-for") || "local").split(",")[0].trim();
+    const key = `${c.req.path}:${ip}`;
+    const now = Date.now();
+    const entry = hits.get(key);
+    if (!entry || entry.resetAt < now) {
+      hits.set(key, { count: 1, resetAt: now + windowMs });
+      if (hits.size > 10000) for (const [k, v] of hits) if (v.resetAt < now) hits.delete(k);
+    } else if (++entry.count > max) {
+      throw new AuthGateError("RATE_LIMITED", "Too many requests. Please try again later.", 429);
+    }
+    await next();
+  };
+}
+const sensitiveLimiter = createRateLimiter(10, 60_000);
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -38,15 +58,24 @@ export function createAuthRouter(
   config: AuthGateServerConfig
 ) {
   const router = new Hono<Env>();
+  const secureCookies = config.cookieOptions?.secure ?? false;
+  const sessionCookie = (expires: Date) => ({
+    httpOnly: true,
+    secure: secureCookies,
+    sameSite: (secureCookies ? "None" : "Lax") as "None" | "Lax",
+    expires,
+    path: "/",
+  });
 
   /**
    * Register endpoint.
    */
-  router.post("/register", async (c) => {
+  router.post("/register", sensitiveLimiter, async (c) => {
     const body = await c.req.json();
     const parsed = registerSchema.parse(body);
 
     const { user, verificationToken } = await authService.register(parsed.email, parsed.password);
+    await config.hooks?.sendVerificationEmail?.(user.email, verificationToken);
 
     return c.json({
       success: true,
@@ -57,7 +86,7 @@ export function createAuthRouter(
           isEmailVerified: user.isEmailVerified,
           createdAt: user.createdAt,
         },
-        verificationToken,
+        ...(config.devMode ? { verificationToken } : {}),
       },
     }, 201);
   });
@@ -65,7 +94,7 @@ export function createAuthRouter(
   /**
    * Login endpoint.
    */
-  router.post("/login", async (c) => {
+  router.post("/login", sensitiveLimiter, async (c) => {
     const body = await c.req.json();
     const parsed = loginSchema.parse(body);
 
@@ -77,13 +106,7 @@ export function createAuthRouter(
 
       const session = await sessionService.createSession(user.id, userAgent, ipAddress);
 
-      setCookie(c, "authgate_session", session.token, {
-        httpOnly: true,
-        secure: (config.cookieOptions?.secure ?? false),
-        sameSite: "Lax",
-        expires: session.expiresAt,
-        path: "/",
-      });
+      setCookie(c, "authgate_session", session.token, sessionCookie(session.expiresAt));
 
       return c.json({
         success: true,
@@ -110,7 +133,7 @@ export function createAuthRouter(
   /**
    * Login second step: verify 2FA code or backup code.
    */
-  router.post("/login/verify-2fa", async (c) => {
+  router.post("/login/verify-2fa", sensitiveLimiter, async (c) => {
     const body = await c.req.json();
     const parsed = z.object({ userId: z.string(), code: z.string() }).parse(body);
 
@@ -121,13 +144,7 @@ export function createAuthRouter(
 
     const session = await sessionService.createSession(user.id, userAgent, ipAddress);
 
-    setCookie(c, "authgate_session", session.token, {
-      httpOnly: true,
-      secure: (config.cookieOptions?.secure ?? false),
-      sameSite: (config.cookieOptions?.secure ?? false) ? "None" : "Lax",
-      expires: session.expiresAt,
-      path: "/",
-    });
+    setCookie(c, "authgate_session", session.token, sessionCookie(session.expiresAt));
 
     return c.json({
       success: true,
@@ -153,7 +170,7 @@ export function createAuthRouter(
   /**
    * Verify and activate 2FA TOTP secret.
    */
-  router.post("/2fa/verify", authMiddleware, async (c) => {
+  router.post("/2fa/verify", authMiddleware, sensitiveLimiter, async (c) => {
     const user = c.get("user");
     const body = await c.req.json();
     const parsed = z.object({ code: z.string() }).parse(body);
@@ -164,7 +181,7 @@ export function createAuthRouter(
   /**
    * Disable 2FA.
    */
-  router.post("/2fa/disable", authMiddleware, async (c) => {
+  router.post("/2fa/disable", authMiddleware, sensitiveLimiter, async (c) => {
     const user = c.get("user");
     const body = await c.req.json();
     const parsed = z.object({ code: z.string() }).parse(body);
@@ -212,24 +229,25 @@ export function createAuthRouter(
   /**
    * Forgot Password endpoint.
    */
-  router.post("/forgot-password", async (c) => {
+  router.post("/forgot-password", sensitiveLimiter, async (c) => {
     const body = await c.req.json();
     const parsed = forgotPasswordSchema.parse(body);
 
     const token = await authService.forgotPassword(parsed.email);
+    if (token) {
+      await config.hooks?.sendPasswordReset?.(parsed.email.toLowerCase().trim(), token);
+    }
 
     return c.json({
       success: true,
-      data: {
-        resetToken: token,
-      },
+      data: config.devMode ? { resetToken: token } : {},
     });
   });
 
   /**
    * Reset Password endpoint.
    */
-  router.post("/reset-password", async (c) => {
+  router.post("/reset-password", sensitiveLimiter, async (c) => {
     const body = await c.req.json();
     const parsed = resetPasswordSchema.parse(body);
 
@@ -264,7 +282,7 @@ export function createAuthRouter(
   /**
    * Generate OTP verification code mediator endpoint.
    */
-  router.post("/otp/generate", async (c) => {
+  router.post("/otp/generate", sensitiveLimiter, async (c) => {
     const body = await c.req.json();
     const parsed = z.object({
       identifier: z.string(),
@@ -273,13 +291,14 @@ export function createAuthRouter(
     }).parse(body);
 
     const { code } = await authService.generateOtp(parsed.identifier, parsed.length, parsed.expiresSeconds);
-    return c.json({ success: true, code });
+    await config.hooks?.sendOtp?.(parsed.identifier.toLowerCase().trim(), code);
+    return c.json(config.devMode ? { success: true, code } : { success: true });
   });
 
   /**
    * Verify OTP code and issue session token endpoint.
    */
-  router.post("/otp/verify", async (c) => {
+  router.post("/otp/verify", sensitiveLimiter, async (c) => {
     const body = await c.req.json();
     const parsed = z.object({
       identifier: z.string(),
@@ -293,13 +312,7 @@ export function createAuthRouter(
 
     const session = await sessionService.createSession(user.id, userAgent, ipAddress);
 
-    setCookie(c, "authgate_session", session.token, {
-      httpOnly: true,
-      secure: (config.cookieOptions?.secure ?? false),
-      sameSite: (config.cookieOptions?.secure ?? false) ? "None" : "Lax",
-      expires: session.expiresAt,
-      path: "/",
-    });
+    setCookie(c, "authgate_session", session.token, sessionCookie(session.expiresAt));
 
     return c.json({
       success: true,
@@ -348,6 +361,7 @@ export function createAuthRouter(
    */
   router.get("/social/google", (c) => {
     if (!config.providers?.google?.clientId) {
+      if (!config.devMode) return c.text("Google login is not configured.", 404);
       return c.redirect("/api/auth/social/mock-consent?provider=google");
     }
     let redirectUri = `${c.req.url.split("?")[0]}/callback`;
@@ -417,20 +431,15 @@ export function createAuthRouter(
     const ipAddress = c.req.header("x-forwarded-for") || "127.0.0.1";
     const session = await sessionService.createSession(user.id, userAgent, ipAddress);
 
-    setCookie(c, "authgate_session", session.token, {
-      httpOnly: true,
-      secure: (config.cookieOptions?.secure ?? false),
-      sameSite: (config.cookieOptions?.secure ?? false) ? "None" : "Lax",
-      expires: session.expiresAt,
-      path: "/",
-    });
+    setCookie(c, "authgate_session", session.token, sessionCookie(session.expiresAt));
 
     const stateParam = c.req.query("state");
     let targetOrigin = (config.allowedOrigins?.join(",") || "http://localhost:5173")?.split(",")[0]?.trim() || "http://localhost:5173";
     if (stateParam && stateParam !== "google-state") {
       try {
         const decoded = decodeURIComponent(stateParam);
-        if (decoded.startsWith("http://") || decoded.startsWith("https://")) {
+        const allowed = (config.allowedOrigins ?? []).map((o) => o.replace(/\/+$/, ""));
+        if (allowed.includes(new URL(decoded).origin)) {
           targetOrigin = decoded;
         }
       } catch (e) {}
@@ -443,6 +452,7 @@ export function createAuthRouter(
    */
   router.get("/social/github", (c) => {
     if (!config.providers?.github?.clientId) {
+      if (!config.devMode) return c.text("GitHub login is not configured.", 404);
       return c.redirect("/api/auth/social/mock-consent?provider=github");
     }
     const redirectUri = `${c.req.url}/callback`;
@@ -505,13 +515,7 @@ export function createAuthRouter(
     const ipAddress = c.req.header("x-forwarded-for") || "127.0.0.1";
     const session = await sessionService.createSession(user.id, userAgent, ipAddress);
 
-    setCookie(c, "authgate_session", session.token, {
-      httpOnly: true,
-      secure: (config.cookieOptions?.secure ?? false),
-      sameSite: (config.cookieOptions?.secure ?? false) ? "None" : "Lax",
-      expires: session.expiresAt,
-      path: "/",
-    });
+    setCookie(c, "authgate_session", session.token, sessionCookie(session.expiresAt));
 
     const targetOrigin = ((config.allowedOrigins?.join(",") || "http://localhost:5173") || "http://localhost:5173").split(",")[0].trim();
     return c.redirect(targetOrigin);
@@ -545,46 +549,19 @@ export function createAuthRouter(
    * SAML Assertion Consumer Service (ACS) endpoint
    */
   router.post("/saml/acs", async (c) => {
-    let samlResponseBase64 = "";
-    const contentType = c.req.header("content-type") || "";
-    if (contentType.includes("application/x-www-form-urlencoded")) {
-      const body: any = await c.req.parseBody();
-      samlResponseBase64 = body.SAMLResponse || "";
-    } else {
-      const body = await c.req.json().catch(() => ({}));
-      samlResponseBase64 = body.SAMLResponse || "";
-    }
-
-    if (!samlResponseBase64) {
-      return c.json({
-        success: false,
-        error: { code: "BAD_REQUEST", message: "Missing SAMLResponse parameter." },
-      }, 400);
-    }
-
-    const { email } = samlService.parseSamlAssertion(samlResponseBase64);
-    const user = await authService.loginOrRegisterWithSocial("saml", email, email);
-
-    const userAgent = c.req.header("user-agent");
-    const ipAddress = c.req.header("x-forwarded-for") || "127.0.0.1";
-    const session = await sessionService.createSession(user.id, userAgent, ipAddress);
-
-    setCookie(c, "authgate_session", session.token, {
-      httpOnly: true,
-      secure: (config.cookieOptions?.secure ?? false),
-      sameSite: (config.cookieOptions?.secure ?? false) ? "None" : "Lax",
-      expires: session.expiresAt,
-      path: "/",
-    });
-
-    const targetOrigin = ((config.allowedOrigins?.join(",") || "http://localhost:5173") || "http://localhost:5173").split(",")[0].trim();
-    return c.redirect(targetOrigin);
+    // SamlService.parseSamlAssertion does not verify XML signatures, issuer or
+    // audience, so accepting assertions would allow forged logins.
+    return c.json({
+      success: false,
+      error: { code: "NOT_IMPLEMENTED", message: "SAML assertion validation is not implemented yet." },
+    }, 501);
   });
 
   /**
    * Built-in Mock Consent Form for Local E2E testing
    */
   router.get("/social/mock-consent", (c) => {
+    if (!config.devMode) return c.text("Not found", 404);
     const provider = c.req.query("provider") || "google";
     const html = `
       <!DOCTYPE html>
@@ -681,6 +658,7 @@ export function createAuthRouter(
    * Mock callback resolver
    */
   router.get("/social/mock/callback", async (c) => {
+    if (!config.devMode) return c.text("Not found", 404);
     const provider = c.req.query("provider") || "google";
     const email = c.req.query("email") || "mockuser@example.com";
     const id = c.req.query("id") || "mock-id-123";
@@ -692,13 +670,7 @@ export function createAuthRouter(
     const ipAddress = c.req.header("x-forwarded-for") || "127.0.0.1";
     const session = await sessionService.createSession(user.id, userAgent, ipAddress);
 
-    setCookie(c, "authgate_session", session.token, {
-      httpOnly: true,
-      secure: (config.cookieOptions?.secure ?? false),
-      sameSite: (config.cookieOptions?.secure ?? false) ? "None" : "Lax",
-      expires: session.expiresAt,
-      path: "/",
-    });
+    setCookie(c, "authgate_session", session.token, sessionCookie(session.expiresAt));
 
     return c.redirect((config.allowedOrigins?.join(",") || "http://localhost:5173") || "http://localhost:5173");
   });
