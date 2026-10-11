@@ -19,6 +19,7 @@ export interface OAuthAuthorizationCode {
   codeChallenge: string;
   codeChallengeMethod: "plain" | "S256";
   scope?: string;
+  nonce?: string;
   createdAt: Date;
 }
 
@@ -45,4 +46,19 @@ export interface OAuthRepository {
   findTokenByAccessToken(accessToken: string): Promise<OAuthToken | null>;
   findTokenByRefreshToken(refreshToken: string): Promise<OAuthToken | null>;
   deleteToken(accessToken: string): Promise<void>;
+}
+
+export interface OidcKey {
+  id: string;
+  kid: string;
+  publicJwk: Record<string, unknown>;
+  /** Private JWK, AES-GCM encrypted when an encryption secret is configured. */
+  privateKeyData: string;
+  createdAt: Date;
+}
+
+export interface OidcKeyRepository {
+  /** All signing keys, newest first. The first one is the active signing key. */
+  findAll(): Promise<OidcKey[]>;
+  create(key: Omit<OidcKey, "id" | "createdAt">): Promise<OidcKey>;
 }

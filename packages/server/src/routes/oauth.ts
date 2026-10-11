@@ -16,6 +16,7 @@ const approveSchema = z.object({
   codeChallenge: z.string(),
   codeChallengeMethod: z.literal("S256"),
   scope: z.string().optional(),
+  nonce: z.string().max(255).optional(),
 });
 
 const tokenExchangeSchema = z.object({
@@ -119,7 +120,8 @@ export function createOAuthRouter(
       parsed.redirectUri,
       parsed.codeChallenge,
       parsed.codeChallengeMethod,
-      parsed.scope
+      parsed.scope,
+      parsed.nonce
     );
 
     const redirectUrl = new URL(parsed.redirectUri);
@@ -166,6 +168,7 @@ export function createOAuthRouter(
         parsed.code_verifier
       );
 
+      const nonce = (token as { nonce?: string }).nonce;
       let idToken: string | undefined;
       if (token.scope?.includes("openid")) {
         const user = await userRepo.findById(token.userId);
@@ -175,7 +178,8 @@ export function createOAuthRouter(
           idToken = await oauthService.generateIdToken(
             { id: user.id, email: user.email, emailVerified: user.isEmailVerified },
             parsed.client_id,
-            baseUrl
+            baseUrl,
+            nonce
           );
         }
       }

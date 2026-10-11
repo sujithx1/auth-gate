@@ -22,7 +22,7 @@ AuthGate follows **Clean Architecture** boundaries:
 - **Domain & Core Interfaces (`@authgate/core`)**: Zero third-party runtime dependencies on frameworks or databases. It specifies domain entities (`User`, `Session`, etc.) and abstract repository interfaces (`UserRepository`, `SessionRepository`, etc.).
 - **Application Services (`@authgate/auth`, `@authgate/session`)**: Contains business logic implementation such as password hashing, registration, and session validations.
 - **Infrastructure / Adapters (`@authgate/drizzle`)**: Database adapters wrapping ORMs or APIs to store state.
-- **Presentation Server (`apps/auth-server`)**: A lightweight Hono server implementing HTTP controllers, session-cookie validation, and REST API request routing.
+- **Presentation Server (`packages/server`)**: A lightweight Hono server implementing HTTP controllers, session-cookie validation, and REST API request routing.
 
 ---
 
@@ -31,8 +31,10 @@ AuthGate follows **Clean Architecture** boundaries:
 ```text
 authgate/
 ├── apps/
-│   └── auth-server/       # Hono REST API server
+│   ├── ui/                # Developer console (React)
+│   └── test-client-api/   # Example app embedding @authgate/server
 ├── packages/
+│   ├── server/            # createAuthGateServer(): Hono routes
 │   ├── core/              # Domain entities, repositories & test utilities
 │   ├── auth/              # Registration, login, validation services
 │   ├── session/           # Session management services
@@ -90,6 +92,15 @@ bun test
    ```
 2. Start the Hono server:
    ```bash
-   bun run apps/auth-server/src/index.ts
+   bun run dev:server
    ```
    The server will start on port `3000`.
+
+---
+
+## More documentation
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Security hardening & OIDC key management](docs/security-and-oidc.md)
+- [SDK guide](docs/sdk-guide.md)
+- Stage specs: `docs/stages/stage-1.md`, `docs/stage-2.md` … `docs/stage-5.md`

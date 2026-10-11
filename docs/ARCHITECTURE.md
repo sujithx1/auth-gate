@@ -11,7 +11,7 @@ AuthGate is architected to keep business rules independent of databases, web fra
 ```mermaid
 graph TD
     subgraph Presentation
-        Server[apps/auth-server - Hono]
+        Server[packages/server - Hono]
     end
 
     subgraph Application Service Layer
@@ -41,7 +41,7 @@ graph TD
 - **Domain Layer (`packages/core`)**: Depends on nothing. It defines domain types and repository signatures.
 - **Service Layer (`packages/auth`, `packages/session`)**: Depends only on the Domain Layer and shared utilities. It knows nothing about SQL, Hono, HTTP headers, or Drizzle.
 - **Infrastructure / Adapter Layer (`packages/adapters/drizzle`)**: Implements Domain repository contracts using SQL / Drizzle query builders.
-- **Presentation Layer (`apps/auth-server`)**: Coordinates boot-time configuration (wiring the database to services) and maps HTTP inputs to Service executions.
+- **Presentation Layer (`packages/server`)**: Coordinates boot-time configuration (wiring the database to services) and maps HTTP inputs to Service executions.
 
 ---
 
@@ -109,7 +109,7 @@ export function drizzleAdapter(db: any): DatabaseAdapter {
 
 ### D. Service Layer Pattern
 All business workflows (such as user creation, token expiration checking, password hashing, and cookie age validations) are locked inside the service layer (`AuthService` and `SessionService`).
-Route handlers in the HTTP server (`apps/auth-server`) only serve as entry gates:
+Route handlers in the HTTP server (`packages/server`) only serve as entry gates:
 1. Parse and validate JSON parameters using Zod.
 2. Delegate to the service.
 3. Set cookies and send standard formatted JSON responses.

@@ -55,7 +55,7 @@ describe("OAuthService", () => {
     expect(tokens.refreshToken).toBeDefined();
   });
 
-  it("should generate standard OIDC discovery metadata and JWKS key set", () => {
+  it("should generate standard OIDC discovery metadata and JWKS key set", async () => {
     const discovery = oauthService.getDiscoveryDoc("http://localhost:3003");
     expect(discovery.issuer).toBe("http://localhost:3003");
     expect(discovery.authorization_endpoint).toBe("http://localhost:3003/api/oauth/authorize");
@@ -63,7 +63,7 @@ describe("OAuthService", () => {
     expect(discovery.userinfo_endpoint).toBe("http://localhost:3003/api/oauth/userinfo");
     expect(discovery.jwks_uri).toBe("http://localhost:3003/.well-known/jwks.json");
 
-    const jwks = oauthService.getJwks();
+    const jwks = await oauthService.getJwks();
     expect(jwks.keys).toHaveLength(1);
     expect(jwks.keys[0].kty).toBe("RSA");
     expect(jwks.keys[0].alg).toBe("RS256");
@@ -98,5 +98,23 @@ describe("OAuthService", () => {
     expect(oauthService.exchangeCodeForToken(code, client.clientId, undefined, verifier)).rejects.toThrow();
     // Code was consumed by the failed attempt
     expect(oauthService.exchangeCodeForToken(code, client.clientId, client.clientSecret, verifier)).rejects.toThrow();
+  });
+
+  it("should persist signing keys, keep them across instances and support rotation", async () => {
+    const opts = { keyRepo: adapter.oidcKeys, keyEncryptionSecret: "test-secret" };
+    const first = new OAuthService(adapter.oauth, opts);
+    const idToken = await first.generateIdToken({ id: "u1", email: "a@b.c" }, "c1", "http://x", "n-123");
+    const payload = JSON.parse(Buffer.from(idToken.split(".")[1], "base64url").toString());
+    expect(payload.nonce).toBe("n-123");
+
+    // A "restarted" instance reuses the persisted key
+    const second = new OAuthService(adapter.oauth, opts);
+    const kid = JSON.parse(Buffer.from(idToken.split(".")[0], "base64url").toString()).kid;
+    expect((await second.getJwks()).keys.map((k) => k.kid)).toContain(kid);
+
+    await second.rotateKey();
+    const jwks = await second.getJwks();
+    expect(jwks.keys).toHaveLength(2);
+    expect(jwks.keys[1].kid).toBe(kid); // old key still published
   });
 });

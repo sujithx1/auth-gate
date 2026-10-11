@@ -1,4 +1,4 @@
-import { eq, and, lt, gt } from "drizzle-orm";
+import { eq, and, lt, gt, desc } from "drizzle-orm";
 import {
   User,
   UserRepository,
@@ -19,6 +19,8 @@ import {
   OAuthAuthorizationCode,
   OAuthToken,
   OAuthRepository,
+  OidcKey,
+  OidcKeyRepository,
   TwoFactorSecret,
   TwoFactorRepository,
   OtpCode,
@@ -552,5 +554,18 @@ export class DrizzleSamlProviderRepository implements SamlProviderRepository {
 
   async delete(id: string): Promise<void> {
     await this.db.delete(schema.samlProviders).where(eq(schema.samlProviders.id, id));
+  }
+}
+
+export class DrizzleOidcKeyRepository implements OidcKeyRepository {
+  constructor(private readonly db: any) {}
+
+  async findAll(): Promise<OidcKey[]> {
+    return await this.db.select().from(schema.oidcKeys).orderBy(desc(schema.oidcKeys.createdAt));
+  }
+
+  async create(key: Omit<OidcKey, "id" | "createdAt">): Promise<OidcKey> {
+    const results = await this.db.insert(schema.oidcKeys).values(key).returning();
+    return results[0];
   }
 }

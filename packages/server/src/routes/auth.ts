@@ -3,7 +3,7 @@ import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { z } from "zod";
 import { AuthService, SamlService } from "@authgate/auth";
 import { SessionService } from "@authgate/session";
-import { AuthGateError } from "@authgate/shared";
+import { AuthGateError, generateSecureToken } from "@authgate/shared";
 import { Env, AuthGateServerConfig } from "../types";
 
 const samlService = new SamlService();
@@ -59,6 +59,32 @@ export function createAuthRouter(
 ) {
   const router = new Hono<Env>();
   const secureCookies = config.cookieOptions?.secure ?? false;
+  // CSRF protection for social login: random state bound to the browser via a short-lived cookie.
+  const startSocialState = (c: any, provider: string, returnTo?: string) => {
+    const state = generateSecureToken(16);
+    const opts = { httpOnly: true, secure: secureCookies, sameSite: "Lax" as const, maxAge: 600, path: "/" };
+    setCookie(c, `authgate_state_${provider}`, state, opts);
+    if (returnTo) setCookie(c, `authgate_return_${provider}`, returnTo, opts);
+    return state;
+  };
+  const finishSocialState = (c: any, provider: string): { ok: boolean; returnTo?: string } => {
+    const expected = getCookie(c, `authgate_state_${provider}`);
+    const returnTo = getCookie(c, `authgate_return_${provider}`);
+    deleteCookie(c, `authgate_state_${provider}`, { path: "/" });
+    deleteCookie(c, `authgate_return_${provider}`, { path: "/" });
+    const got = c.req.query("state");
+    return { ok: !!expected && !!got && expected === got, returnTo };
+  };
+  const resolveReturnTo = (returnTo?: string): string => {
+    const allowed = (config.allowedOrigins ?? []).map((o) => o.replace(/\/+$/, ""));
+    const fallback = allowed[0] || "http://localhost:5173";
+    if (!returnTo) return fallback;
+    try {
+      return allowed.includes(new URL(returnTo).origin) ? returnTo : fallback;
+    } catch {
+      return fallback;
+    }
+  };
   const sessionCookie = (expires: Date) => ({
     httpOnly: true,
     secure: secureCookies,
@@ -374,7 +400,7 @@ export function createAuthRouter(
     }
 
     const returnTo = c.req.query("redirect_url") || c.req.header("referer");
-    const state = returnTo ? encodeURIComponent(returnTo) : "google-state";
+    const state = startSocialState(c, "google", returnTo);
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${config.providers?.google?.clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20profile%20email&state=${state}`;
     return c.redirect(googleAuthUrl);
   });
@@ -385,6 +411,8 @@ export function createAuthRouter(
   router.get("/social/google/callback", async (c) => {
     const code = c.req.query("code");
     if (!code) return c.text("Authorization code missing.", 400);
+    const social = finishSocialState(c, "google");
+    if (!social.ok) return c.text("Invalid or missing OAuth state.", 400);
 
     let redirectUri = c.req.url.split("?")[0];
     const forwardedProto = c.req.header("x-forwarded-proto");
@@ -433,17 +461,7 @@ export function createAuthRouter(
 
     setCookie(c, "authgate_session", session.token, sessionCookie(session.expiresAt));
 
-    const stateParam = c.req.query("state");
-    let targetOrigin = (config.allowedOrigins?.join(",") || "http://localhost:5173")?.split(",")[0]?.trim() || "http://localhost:5173";
-    if (stateParam && stateParam !== "google-state") {
-      try {
-        const decoded = decodeURIComponent(stateParam);
-        const allowed = (config.allowedOrigins ?? []).map((o) => o.replace(/\/+$/, ""));
-        if (allowed.includes(new URL(decoded).origin)) {
-          targetOrigin = decoded;
-        }
-      } catch (e) {}
-    }
+    const targetOrigin = resolveReturnTo(social.returnTo);
     return c.redirect(targetOrigin);
   });
 
@@ -456,7 +474,7 @@ export function createAuthRouter(
       return c.redirect("/api/auth/social/mock-consent?provider=github");
     }
     const redirectUri = `${c.req.url}/callback`;
-    const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${config.providers?.github?.clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email&state=github-state`;
+    const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${config.providers?.github?.clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email&state=${startSocialState(c, "github", c.req.query("redirect_url") || c.req.header("referer"))}`;
     return c.redirect(githubAuthUrl);
   });
 
@@ -466,6 +484,8 @@ export function createAuthRouter(
   router.get("/social/github/callback", async (c) => {
     const code = c.req.query("code");
     if (!code) return c.text("Authorization code missing.", 400);
+    const social = finishSocialState(c, "github");
+    if (!social.ok) return c.text("Invalid or missing OAuth state.", 400);
 
     const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
       method: "POST",
@@ -517,8 +537,7 @@ export function createAuthRouter(
 
     setCookie(c, "authgate_session", session.token, sessionCookie(session.expiresAt));
 
-    const targetOrigin = ((config.allowedOrigins?.join(",") || "http://localhost:5173") || "http://localhost:5173").split(",")[0].trim();
-    return c.redirect(targetOrigin);
+    return c.redirect(resolveReturnTo(social.returnTo));
   });
 
   /**

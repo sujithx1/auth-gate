@@ -1,4 +1,4 @@
-import { OAuthClient, OAuthAuthorizationCode, OAuthToken, OAuthRepository, UserRepository } from "@authgate/core";
+import { OAuthClient, OAuthAuthorizationCode, OAuthToken, OAuthRepository, OidcKey, OidcKeyRepository } from "@authgate/core";
 import { timingSafeEqual } from "crypto";
 import { NotFoundError, ValidationError, generateSecureToken } from "@authgate/shared";
 
@@ -21,46 +21,116 @@ async function verifyPkce(verifier: string, challenge: string, method: "plain" |
 }
 
 
-// In production, persist these keys in the database (OidcKey table).
-interface RsaKeyPair {
+interface SigningKey {
+  kid: string;
   privateKey: CryptoKey;
   publicJwk: JsonWebKey;
-  kid: string;
 }
 
-let _rsaKeyPair: RsaKeyPair | null = null;
+const RSA_PARAMS = { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" } as const;
 
-async function getOrCreateRsaKeyPair(): Promise<RsaKeyPair> {
-  if (_rsaKeyPair) return _rsaKeyPair;
+async function aesKey(secret: string): Promise<CryptoKey> {
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", Buffer.from(secret, "utf-8"));
+  return globalThis.crypto.subtle.importKey("raw", digest, "AES-GCM", false, ["encrypt", "decrypt"]);
+}
 
-  const keyPair = await globalThis.crypto.subtle.generateKey(
-    {
-      name: "RSASSA-PKCS1-v1_5",
-      modulusLength: 2048,
-      publicExponent: new Uint8Array([1, 0, 1]),
-      hash: "SHA-256",
-    },
-    true,
-    ["sign", "verify"]
+async function sealPrivateJwk(jwk: JsonWebKey, secret?: string): Promise<string> {
+  const json = JSON.stringify(jwk);
+  if (!secret) return `plain:${json}`;
+  const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
+  const ct = await globalThis.crypto.subtle.encrypt({ name: "AES-GCM", iv }, await aesKey(secret), Buffer.from(json));
+  return `aes:${Buffer.from(iv).toString("base64")}.${Buffer.from(ct).toString("base64")}`;
+}
+
+async function openPrivateJwk(data: string, secret?: string): Promise<JsonWebKey> {
+  if (data.startsWith("plain:")) return JSON.parse(data.slice(6));
+  if (!secret) throw new Error("OIDC signing keys are encrypted but no encryption secret was configured.");
+  const [iv, ct] = data.slice(4).split(".");
+  const pt = await globalThis.crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: Buffer.from(iv, "base64") },
+    await aesKey(secret),
+    Buffer.from(ct, "base64")
   );
+  return JSON.parse(Buffer.from(pt).toString("utf-8"));
+}
 
-  const publicJwk = await globalThis.crypto.subtle.exportKey("jwk", keyPair.publicKey);
-  const kid = `authgate-key-${Date.now()}`;
-
-  _rsaKeyPair = { privateKey: keyPair.privateKey, publicJwk, kid };
-  return _rsaKeyPair;
+export interface OAuthServiceOptions {
+  /** Persists OIDC signing keys. Without it, keys live in memory and change on restart. */
+  keyRepo?: OidcKeyRepository;
+  /** Secret used to encrypt private signing keys at rest (AES-GCM). */
+  keyEncryptionSecret?: string;
 }
 
 export class OAuthService {
-  private _jwks: { keys: Array<JsonWebKey & { kid?: string; use?: string; alg?: string }> } | null = null;
+  private keys: SigningKey[] | null = null;
+  private keysPromise: Promise<SigningKey[]> | null = null;
+  private readonly memoryKeys: Omit<OidcKey, "id" | "createdAt">[] = [];
 
-  constructor(private readonly oauthRepo: OAuthRepository) {
-    // Eagerly warm up the RSA key pair in the background
-    getOrCreateRsaKeyPair().then((kp) => {
-      this._jwks = {
-        keys: [{ ...kp.publicJwk, use: "sig", alg: "RS256", kid: kp.kid }],
-      };
+  constructor(
+    private readonly oauthRepo: OAuthRepository,
+    private readonly options: OAuthServiceOptions = {}
+  ) {
+    // Warm up keys in the background; failures surface on first use.
+    this.loadKeys().catch(() => {});
+  }
+
+  /** Loads signing keys (newest first), generating the first one if none exist. */
+  private loadKeys(): Promise<SigningKey[]> {
+    if (this.keys) return Promise.resolve(this.keys);
+    this.keysPromise ??= (async () => {
+      let rows = this.options.keyRepo ? await this.options.keyRepo.findAll() : [...this.memoryKeys].reverse();
+      if (rows.length === 0) {
+        await this.createKey();
+        rows = this.options.keyRepo ? await this.options.keyRepo.findAll() : [...this.memoryKeys].reverse();
+      }
+      const keys = await Promise.all(
+        rows.map(async (row) => ({
+          kid: row.kid,
+          publicJwk: row.publicJwk as JsonWebKey,
+          privateKey: await globalThis.crypto.subtle.importKey(
+            "jwk",
+            await openPrivateJwk(row.privateKeyData, this.options.keyEncryptionSecret),
+            RSA_PARAMS,
+            false,
+            ["sign"]
+          ),
+        }))
+      );
+      this.keys = keys;
+      return keys;
+    })().finally(() => {
+      this.keysPromise = null;
     });
+    return this.keysPromise;
+  }
+
+  private async createKey(): Promise<void> {
+    const pair = await globalThis.crypto.subtle.generateKey(
+      { ...RSA_PARAMS, modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]) },
+      true,
+      ["sign", "verify"]
+    );
+    const row = {
+      kid: `authgate-key-${Date.now()}-${generateSecureToken(4)}`,
+      publicJwk: (await globalThis.crypto.subtle.exportKey("jwk", pair.publicKey)) as Record<string, unknown>,
+      privateKeyData: await sealPrivateJwk(
+        await globalThis.crypto.subtle.exportKey("jwk", pair.privateKey),
+        this.options.keyEncryptionSecret
+      ),
+    };
+    if (this.options.keyRepo) await this.options.keyRepo.create(row);
+    else this.memoryKeys.push(row);
+  }
+
+  /**
+   * Generates a new signing key and makes it active. Old keys stay in the JWKS
+   * so tokens signed before the rotation still verify.
+   */
+  async rotateKey(): Promise<void> {
+    await this.loadKeys();
+    await this.createKey();
+    this.keys = null;
+    await this.loadKeys();
   }
 
   async registerClient(
@@ -109,7 +179,8 @@ export class OAuthService {
     redirectUri: string,
     codeChallenge: string,
     codeChallengeMethod: "plain" | "S256",
-    scope?: string
+    scope?: string,
+    nonce?: string
   ): Promise<string> {
     if (codeChallengeMethod !== "S256" || !codeChallenge) {
       throw new ValidationError("PKCE with code_challenge_method S256 is required.");
@@ -128,6 +199,7 @@ export class OAuthService {
       codeChallenge,
       codeChallengeMethod,
       scope,
+      nonce,
     });
 
     return code;
@@ -138,7 +210,7 @@ export class OAuthService {
     clientId: string,
     clientSecret: string | undefined,
     codeVerifier: string
-  ): Promise<OAuthToken> {
+  ): Promise<OAuthToken & { nonce?: string }> {
     const authCode = await this.oauthRepo.findAuthorizationCode(code);
     if (!authCode) {
       throw new ValidationError("Authorization code is invalid or expired.");
@@ -173,7 +245,7 @@ export class OAuthService {
     const refreshExpiresAt = new Date();
     refreshExpiresAt.setDate(refreshExpiresAt.getDate() + 30); // 30 days refresh token
 
-    return await this.oauthRepo.createToken({
+    const issued = await this.oauthRepo.createToken({
       accessToken,
       refreshToken,
       clientId,
@@ -182,6 +254,7 @@ export class OAuthService {
       refreshExpiresAt,
       scope: authCode.scope,
     });
+    return { ...issued, nonce: authCode.nonce };
   }
 
   async exchangeRefreshTokenForToken(
@@ -266,10 +339,9 @@ export class OAuthService {
     };
   }
 
-  getJwks() {
-    // Return the cached JWKS (populated during construction).
-    // If keys aren't ready yet return empty set — client can retry.
-    return this._jwks ?? { keys: [] };
+  async getJwks() {
+    const keys = await this.loadKeys();
+    return { keys: keys.map((k) => ({ ...k.publicJwk, use: "sig", alg: "RS256", kid: k.kid })) };
   }
 
   /**
@@ -282,11 +354,7 @@ export class OAuthService {
     baseUrl: string,
     nonce?: string
   ): Promise<string> {
-    const kp = await getOrCreateRsaKeyPair();
-    // Update JWKS cache whenever we generate a token
-    this._jwks = {
-      keys: [{ ...kp.publicJwk, use: "sig", alg: "RS256", kid: kp.kid }],
-    };
+    const [kp] = await this.loadKeys();
 
     const origin = baseUrl.replace(/\/+$/, "");
     const now = Math.floor(Date.now() / 1000);

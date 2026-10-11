@@ -133,6 +133,7 @@ export const oauthAuthorizationCodes = pgTable("oauth_authorization_codes", {
   codeChallenge: varchar("code_challenge", { length: 255 }).notNull(),
   codeChallengeMethod: varchar("code_challenge_method", { length: 50 }).notNull(), // plain or S256
   scope: varchar("scope", { length: 255 }),
+  nonce: varchar("nonce", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -194,4 +195,12 @@ export const samlProviders = pgTable("saml_providers", {
   attributeMapping: jsonb("attribute_mapping").$type<Record<string, string>>().default({}),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const oidcKeys = pgTable("oidc_keys", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  kid: varchar("kid", { length: 255 }).notNull().unique(),
+  publicJwk: jsonb("public_jwk").$type<Record<string, unknown>>().notNull(),
+  privateKeyData: text("private_key_data").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });

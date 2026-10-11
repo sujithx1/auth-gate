@@ -25,7 +25,10 @@ export function createAuthGateServer(config: AuthGateServerConfig) {
   const sessionService = new SessionService(config.database.sessions);
   const rbacService = new RbacService(config.database.roles);
   const orgService = new OrganizationService(config.database.organizations, config.database.invitations);
-  const oauthService = new OAuthService(config.database.oauth);
+  const oauthService = new OAuthService(config.database.oauth, {
+    keyRepo: config.database.oidcKeys,
+    keyEncryptionSecret: config.oidcKeyEncryptionSecret,
+  });
 
   const authMiddleware = createAuthMiddleware(config.database.users, sessionService);
   const permissionMiddleware = createPermissionMiddleware(rbacService);
@@ -43,8 +46,8 @@ export function createAuthGateServer(config: AuthGateServerConfig) {
     return c.json(oauthService.getDiscoveryDoc(origin));
   });
 
-  app.get("/.well-known/jwks.json", (c) => {
-    return c.json(oauthService.getJwks());
+  app.get("/.well-known/jwks.json", async (c) => {
+    return c.json(await oauthService.getJwks());
   });
 
   app.route("/auth", authRouter);

@@ -1,7 +1,7 @@
 import { User, Session, VerificationToken, VerificationTokenType, TwoFactorSecret, OtpCode, SocialAccount, SamlProvider } from "./entities";
 import { RoleRepository } from "./rbac";
 import { OrganizationRepository, InvitationRepository } from "./organization";
-import { OAuthRepository } from "./oauth";
+import { OAuthRepository, OidcKeyRepository } from "./oauth";
 
 export interface UserRepository {
   findById(id: string): Promise<User | null>;
@@ -64,6 +64,7 @@ export interface DatabaseAdapter {
   organizations: OrganizationRepository;
   invitations: InvitationRepository;
   oauth: OAuthRepository;
+  oidcKeys: OidcKeyRepository;
   twoFactor: TwoFactorRepository;
   otpCodes: OtpRepository;
   socialAccounts: SocialAccountRepository;

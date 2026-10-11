@@ -317,6 +317,8 @@ import {
   OAuthAuthorizationCode,
   OAuthToken,
   OAuthRepository,
+  OidcKey,
+  OidcKeyRepository,
 } from "../domain/oauth";
 
 export class InMemoryOAuthRepository implements OAuthRepository {
@@ -521,6 +523,20 @@ export class InMemorySamlProviderRepository implements SamlProviderRepository {
   }
 }
 
+export class InMemoryOidcKeyRepository implements OidcKeyRepository {
+  public keys: OidcKey[] = [];
+
+  async findAll(): Promise<OidcKey[]> {
+    return [...this.keys].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async create(key: Omit<OidcKey, "id" | "createdAt">): Promise<OidcKey> {
+    const created: OidcKey = { ...key, id: crypto.randomUUID(), createdAt: new Date() };
+    this.keys.push(created);
+    return created;
+  }
+}
+
 export function createInMemoryAdapter(): DatabaseAdapter {
   return {
     users: new InMemoryUserRepository(),
@@ -530,6 +546,7 @@ export function createInMemoryAdapter(): DatabaseAdapter {
     organizations: new InMemoryOrganizationRepository(),
     invitations: new InMemoryInvitationRepository(),
     oauth: new InMemoryOAuthRepository(),
+    oidcKeys: new InMemoryOidcKeyRepository(),
     twoFactor: new InMemoryTwoFactorRepository(),
     otpCodes: new InMemoryOtpRepository(),
     socialAccounts: new InMemorySocialAccountRepository(),

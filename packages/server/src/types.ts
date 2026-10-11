@@ -28,6 +28,8 @@ export interface AuthGateServerConfig {
    * mock social login routes are enabled. NEVER enable in production.
    */
   devMode?: boolean;
+  /** Secret used to encrypt OIDC signing keys at rest. Strongly recommended in production. */
+  oidcKeyEncryptionSecret?: string;
   /** Delivery hooks used to send tokens/codes to users (email, SMS, ...). */
   hooks?: {
     sendVerificationEmail?: (email: string, token: string) => Promise<void> | void;
